@@ -3,127 +3,119 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f4f4f5" />
   <title>TAIL — Voice Lab</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="__BASE__/styles.css" />
 </head>
 <body>
-  <main class="stage">
-    <header class="brand-block">
-      <p class="eyebrow">TTS demo</p>
-      <h1 class="brand" id="brand">TAIL</h1>
-      <p class="tagline" id="subtitle">Voice Lab</p>
-    </header>
+  <div class="app">
+    <div class="grid">
+      <aside class="card rail-card" aria-label="Voice controls">
+        <div class="card-column-body">
+          <section class="voice-block">
+            <h2>Voice</h2>
+            <p class="field-hint">Select a voice, then generate. Paste an ID below to override.</p>
+            <label class="select-wrap" for="voice">
+              <span class="visually-hidden">Voice</span>
+              <select id="voice" class="select"></select>
+            </label>
+            <label for="voice-manual" class="visually-hidden">Or paste voice ID</label>
+            <input type="text" id="voice-manual" class="manual-id" placeholder="Paste voice ID…" autocomplete="off" spellcheck="false" />
+            <p class="hint muted" id="voice-hint">No voices in config — paste a voice ID above.</p>
+          </section>
 
-    <section class="console" aria-label="TTS console">
-      <div class="rail">
-        <div class="field">
-          <label for="character">Character</label>
-          <select id="character"></select>
-          <p class="hint" id="traits"></p>
+          <section class="controls-block">
+            <div class="field">
+              <span class="label">Model</span>
+              <div class="segment" role="group" aria-label="Model">
+                <button type="button" class="seg active" data-model="eleven_v3" id="model-v3">v3</button>
+                <button type="button" class="seg" data-model="eleven_v4" id="model-v4">v4</button>
+              </div>
+              <p class="hint" id="model-note"></p>
+            </div>
+
+            <div class="field row">
+              <label class="check" id="use-dict-wrap">
+                <input type="checkbox" id="use-dict" checked />
+                <span id="use-dict-label">Pronunciation dictionary</span>
+              </label>
+              <label class="inline">
+                Seed
+                <input type="number" id="seed" min="0" step="1" placeholder="auto" />
+              </label>
+            </div>
+
+            <div class="dict-summary" id="dict-card">
+              <div class="dict-title" id="dict-title">Active dictionary</div>
+              <div class="dict-body" id="dict-body">Loading…</div>
+            </div>
+          </section>
         </div>
+      </aside>
 
-        <div class="field">
-          <label for="voice">Voice</label>
-          <select id="voice"></select>
-          <label for="voice-manual" class="sr-only">Or paste voice ID</label>
-          <input type="text" id="voice-manual" placeholder="Paste voice ID…" autocomplete="off" spellcheck="false" />
-          <p class="hint muted" id="voice-hint">No voices in config — paste a voice ID above.</p>
-        </div>
-
-        <div class="field">
-          <span class="label">Model</span>
-          <div class="segment" role="group" aria-label="Model">
-            <button type="button" class="seg active" data-model="eleven_v3" id="model-v3">v3</button>
-            <button type="button" class="seg" data-model="eleven_v4" id="model-v4">v4</button>
+      <main class="card editor-card" aria-label="Script and generate">
+        <div class="card-column-body">
+          <div class="field grow">
+            <div class="label-row">
+              <label for="script">Script</label>
+              <div class="chips" id="script-chips"></div>
+            </div>
+            <textarea id="script" rows="6" spellcheck="false" placeholder="Enter script…"></textarea>
           </div>
-          <p class="hint" id="model-note"></p>
-        </div>
 
-        <div class="field row">
-          <label class="check">
-            <input type="checkbox" id="use-dict" checked />
-            Pronunciation dictionary
-          </label>
-          <label class="inline">
-            Seed
-            <input type="number" id="seed" min="0" step="1" placeholder="auto" />
-          </label>
-        </div>
-
-        <div class="dict-summary" id="dict-card">
-          <div class="dict-title">Active dictionary</div>
-          <div class="dict-body" id="dict-body">Loading…</div>
-        </div>
-      </div>
-
-      <div class="editor">
-        <div class="field grow">
-          <div class="label-row">
-            <label for="script">Script</label>
-            <div class="chips" id="script-chips"></div>
+          <div class="actions">
+            <button type="button" class="btn btn-primary" id="generate">
+              <span class="cta-label">Generate</span>
+            </button>
+            <button type="button" class="btn btn-ghost" id="download" disabled>Download MP3</button>
+            <p class="status" id="status" role="status"></p>
           </div>
-          <textarea id="script" rows="8" spellcheck="false" placeholder="Enter script…"></textarea>
-        </div>
 
-        <div class="actions">
-          <button type="button" class="cta" id="generate">
-            <span class="cta-label">Generate</span>
-            <span class="cta-glow" aria-hidden="true"></span>
-          </button>
-          <button type="button" class="ghost" id="download" disabled>Download MP3</button>
-          <p class="status" id="status" role="status"></p>
-        </div>
-
-        <div class="player" id="player-wrap" hidden>
-          <div class="wave" id="wave" aria-hidden="true">
-            <span></span><span></span><span></span><span></span><span></span>
-            <span></span><span></span><span></span><span></span><span></span>
+          <div class="player" id="player-wrap" hidden>
+            <div class="wave" id="wave" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <audio id="player" controls></audio>
           </div>
-          <audio id="player" controls></audio>
+        </div>
+      </main>
+    </div>
+
+    <details class="lexicon-panel" id="lexicon">
+      <summary class="lexicon-summary">
+        <span class="lexicon-title">Dictionary</span>
+        <span class="lexicon-meta" id="lexicon-meta">Loading…</span>
+      </summary>
+      <div class="lexicon-body">
+        <div class="ortho-block">
+          <span class="label">Orthography</span>
+          <ul class="ortho-list" id="ortho-list"></ul>
+        </div>
+
+        <div class="rules-toolbar">
+          <p class="rules-count" id="rules-count">Entries</p>
+          <label class="visually-hidden" for="dict-filter">Filter dictionary entries</label>
+          <input type="search" id="dict-filter" class="rules-filter" placeholder="Filter…" autocomplete="off" />
+        </div>
+
+        <div class="rules-scroll">
+          <table class="rules-table">
+            <thead>
+              <tr>
+                <th scope="col">Grapheme</th>
+                <th scope="col" class="arrow" aria-hidden="true"></th>
+                <th scope="col" id="rules-value-head">Phoneme</th>
+              </tr>
+            </thead>
+            <tbody id="rules-body">
+              <tr><td colspan="3" class="rules-empty">Loading…</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
-    </section>
-
-    <section class="lexicon" id="lexicon" aria-label="Pronunciation dictionary contents">
-      <div class="lexicon-head">
-        <h2 class="lexicon-title">Dictionary</h2>
-        <p class="lexicon-meta" id="lexicon-meta">Loading…</p>
-      </div>
-
-      <div class="ortho-block">
-        <span class="label">Orthography</span>
-        <ul class="ortho-list" id="ortho-list"></ul>
-      </div>
-
-      <div class="rules-toolbar">
-        <p class="rules-count" id="rules-count">Entries</p>
-        <label class="sr-only" for="dict-filter">Filter dictionary entries</label>
-        <input type="search" id="dict-filter" class="rules-filter" placeholder="Filter…" autocomplete="off" />
-      </div>
-
-      <div class="rules-scroll">
-        <table class="rules-table">
-          <thead>
-            <tr>
-              <th scope="col">Grapheme</th>
-              <th scope="col" class="arrow" aria-hidden="true"></th>
-              <th scope="col" id="rules-value-head">Phoneme</th>
-            </tr>
-          </thead>
-          <tbody id="rules-body">
-            <tr><td colspan="3" class="rules-empty">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <footer class="foot">
-      <p>TAIL · Anzellan pronunciation</p>
-    </footer>
-  </main>
+    </details>
+  </div>
 
   <script src="__BASE__/app.js" type="module"></script>
 </body>

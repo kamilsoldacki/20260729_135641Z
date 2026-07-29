@@ -78,12 +78,26 @@ def save_dict_cache(cache: dict[str, Any]) -> None:
         f.write("\n")
 
 
+def model_pls_supported(cfg: dict[str, Any], model_id: str) -> bool:
+    models = {m["id"]: m for m in cfg.get("models", [])}
+    meta = models.get(model_id, {})
+    if "pls_supported" in meta:
+        return bool(meta["pls_supported"])
+    return model_id == "eleven_v3"
+
+
 def resolve_dict_locator(cfg: dict[str, Any], model_id: str) -> dict[str, str]:
-    """Pick phoneme (v3) or alias (v4) dictionary locators per ElevenLabs docs."""
+    """Pick phoneme dictionary locators for models that support PLS."""
+    if not model_pls_supported(cfg, model_id):
+        raise HTTPException(
+            status_code=400,
+            detail="PLS dictionaries are not available for this model yet.",
+        )
+
     models = {m["id"]: m for m in cfg.get("models", [])}
     mode = models.get(model_id, {}).get("dict_mode")
     if mode not in ("phoneme", "alias"):
-        mode = "phoneme" if model_id == "eleven_v3" else "alias"
+        mode = "phoneme"
 
     block = cfg["pronunciation"][mode]
     dict_id = block.get("dictionary_id")
@@ -218,7 +232,7 @@ def get_config() -> dict[str, Any]:
         "brand": cfg.get("brand", "TAIL"),
         "title": cfg.get("title", "Anzellan Voice Lab"),
         "models": cfg.get("models", []),
-        "characters": cfg.get("characters", []),
+        "voices": cfg.get("voices", []),
         "sample_scripts": cfg.get("sample_scripts", {}),
         "orthography": cfg.get("orthography", []),
         "pronunciation": {
@@ -262,7 +276,7 @@ def tts(req: TtsRequest) -> Response:
         payload["voice_settings"] = voice_settings
 
     dict_meta: dict[str, Any] = {"applied": False}
-    if req.use_dictionary:
+    if req.use_dictionary and model_pls_supported(cfg, req.model_id):
         locator = resolve_dict_locator(cfg, req.model_id)
         payload["pronunciation_dictionary_locators"] = [locator]
         models = {m["id"]: m for m in cfg.get("models", [])}

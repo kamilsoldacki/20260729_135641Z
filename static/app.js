@@ -64,22 +64,55 @@ async function fetchConfig() {
   return res.json();
 }
 
-function currentCharacter() {
-  const id = $("#character").value;
-  return state.config.characters.find((c) => c.id === id);
-}
-
 function modelMeta() {
   return (state.config.models || []).find((m) => m.id === state.modelId) || {};
 }
 
+function plsSupported() {
+  const meta = modelMeta();
+  if (typeof meta.pls_supported === "boolean") return meta.pls_supported;
+  return state.modelId === "eleven_v3";
+}
+
 function currentDictMode() {
-  return modelMeta().dict_mode || (state.modelId === "eleven_v3" ? "phoneme" : "alias");
+  if (!plsSupported()) return "inline_ipa";
+  return modelMeta().dict_mode || "phoneme";
 }
 
 function currentDictBlock() {
   const mode = currentDictMode();
+  if (mode === "inline_ipa") return {};
   return state.config.pronunciation?.[mode] || {};
+}
+
+function syncDictControls() {
+  const supported = plsSupported();
+  const checkbox = $("#use-dict");
+  const label = $("#use-dict-label");
+  const wrap = $("#use-dict-wrap");
+  const title = $("#dict-title");
+  const note = $("#model-note");
+  const meta = modelMeta();
+
+  note.textContent = meta.note || "";
+
+  if (supported) {
+    checkbox.disabled = false;
+    wrap?.classList.remove("is-disabled");
+    if (!checkbox.dataset.userTouched) checkbox.checked = true;
+    label.textContent = "Pronunciation dictionary";
+    title.textContent = "Active dictionary";
+  } else {
+    checkbox.checked = false;
+    checkbox.disabled = true;
+    wrap?.classList.add("is-disabled");
+    label.textContent = "Inline IPA in script";
+    title.textContent = "Pronunciation";
+  }
+}
+
+function defaultScript() {
+  return state.config.sample_scripts?.default || "";
 }
 
 function renderOrthography() {
@@ -145,12 +178,22 @@ function renderLexiconRules() {
 }
 
 function updateDictCard() {
+  if (!plsSupported()) {
+    $("#dict-body").textContent = [
+      "Preview model",
+      "PLS dictionaries arrive with the public v4 release.",
+      "Tip: put IPA in slashes in the script, e.g. /ˈnaɪki/.",
+    ].join("\n");
+    $("#lexicon-meta").textContent = "Inline IPA · PLS with public v4";
+    return;
+  }
+
   const mode = currentDictMode();
   const block = currentDictBlock();
   const lines = [
     block.name || mode,
     `mode: ${mode}`,
-    `id: ${block.dictionary_id || block.id || "(auto-create on first v4 generate)"}`,
+    `id: ${block.dictionary_id || block.id || "(not configured)"}`,
   ];
   if (block.version_id) lines.push(`version: ${block.version_id}`);
   if (block.pls_file) lines.push(`pls: ${block.pls_file}`);
@@ -161,12 +204,36 @@ function updateDictCard() {
   $("#lexicon-meta").textContent = metaBits.join(" · ");
 }
 
+function renderInlineIpaPanel() {
+  state.lexiconEntries = [];
+  state.lexiconKind = "phoneme";
+  $("#rules-count").textContent = "Inline IPA";
+  $("#rules-value-head").textContent = "Phoneme (IPA)";
+  const body = $("#rules-body");
+  body.replaceChildren();
+  const tr = document.createElement("tr");
+  const td = document.createElement("td");
+  td.colSpan = 3;
+  td.className = "rules-empty";
+  td.textContent =
+    "PLS not wired on preview v4 yet. Use inline IPA in the script (e.g. /ˈnaɪki/). Full dictionaries arrive with the public v4 release.";
+  tr.appendChild(td);
+  body.appendChild(tr);
+}
+
 async function loadActiveLexicon() {
   const token = ++state.lexiconLoadToken;
+  syncDictControls();
+  updateDictCard();
+
+  if (!plsSupported()) {
+    renderInlineIpaPanel();
+    return;
+  }
+
   const mode = currentDictMode();
   const block = currentDictBlock();
   const plsName = safePlsBasename(block.pls_file);
-  updateDictCard();
 
   if (!plsName) {
     state.lexiconEntries = [];
@@ -203,23 +270,10 @@ async function loadActiveLexicon() {
   }
 }
 
-function fillCharacters() {
-  const sel = $("#character");
-  sel.innerHTML = "";
-  for (const c of state.config.characters) {
-    const opt = document.createElement("option");
-    opt.value = c.id;
-    opt.textContent = c.name;
-    sel.appendChild(opt);
-  }
-}
-
 function fillVoices() {
-  const char = currentCharacter();
   const sel = $("#voice");
   sel.innerHTML = "";
-  const voices = char?.voices || [];
-  $("#traits").textContent = char?.traits || "";
+  const voices = state.config.voices || [];
 
   if (!voices.length) {
     const opt = document.createElement("option");
@@ -238,39 +292,21 @@ function fillVoices() {
   }
   syncGenerateEnabled();
 
-  const key = char?.default_script_key;
-  if (key && state.config.sample_scripts?.[key]) {
-    $("#script").value = state.config.sample_scripts[key];
+  const script = defaultScript();
+  if (script && !$("#script").value.trim()) {
+    $("#script").value = script;
   }
 }
 
 function fillScriptChips() {
   const wrap = $("#script-chips");
   wrap.innerHTML = "";
-  const bilingual = state.config.sample_scripts?.docx_bilingual || [];
-  for (const line of bilingual) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "chip";
-    btn.textContent = line.length > 28 ? line.slice(0, 26) + "…" : line;
-    btn.title = line;
-    btn.addEventListener("click", () => {
-      const ta = $("#script");
-      ta.value = ta.value.trim() ? `${ta.value.trim()}\n${line}` : line;
-      ta.focus();
-    });
-    wrap.appendChild(btn);
-  }
   const loadDefault = document.createElement("button");
   loadDefault.type = "button";
   loadDefault.className = "chip";
-  loadDefault.textContent = "Default script";
+  loadDefault.textContent = "Load default";
   loadDefault.addEventListener("click", () => {
-    const char = currentCharacter();
-    const key = char?.default_script_key;
-    if (key && state.config.sample_scripts?.[key]) {
-      $("#script").value = state.config.sample_scripts[key];
-    }
+    $("#script").value = defaultScript();
   });
   wrap.appendChild(loadDefault);
 }
@@ -280,7 +316,7 @@ function setModel(modelId) {
   document.querySelectorAll(".seg").forEach((el) => {
     el.classList.toggle("active", el.dataset.model === modelId);
   });
-  $("#model-note").textContent = modelMeta().note || "";
+  delete $("#use-dict").dataset.userTouched;
   loadActiveLexicon();
 }
 
@@ -329,7 +365,7 @@ async function generate() {
     text,
     voice_id: voiceId,
     model_id: state.modelId,
-    use_dictionary: $("#use-dict").checked,
+    use_dictionary: $("#use-dict").checked && plsSupported(),
   };
   if (seedRaw !== "") body.seed = Number(seedRaw);
 
@@ -367,11 +403,13 @@ async function generate() {
 
     const dictApplied = res.headers.get("X-Dict-Applied") === "1";
     const dictId = res.headers.get("X-Dict-Id") || "";
-    setStatus(
-      dictApplied
-        ? `Ready · dictionary ${dictId || "on"}`
-        : "Ready · dictionary off",
-    );
+    if (dictApplied) {
+      setStatus(`Ready · dictionary ${dictId || "on"}`);
+    } else if (!plsSupported()) {
+      setStatus("Ready · inline IPA (no PLS)");
+    } else {
+      setStatus("Ready · dictionary off");
+    }
 
     try {
       await player.play();
@@ -395,17 +433,19 @@ function download() {
 }
 
 function bind() {
-  $("#character").addEventListener("change", fillVoices);
   $("#voice").addEventListener("change", syncGenerateEnabled);
   $("#voice-manual").addEventListener("input", syncGenerateEnabled);
   document.querySelectorAll(".seg").forEach((el) => {
     el.addEventListener("click", () => setModel(el.dataset.model));
   });
+  $("#use-dict").addEventListener("change", () => {
+    $("#use-dict").dataset.userTouched = "1";
+  });
   $("#generate").addEventListener("click", generate);
   $("#download").addEventListener("click", download);
   $("#dict-filter").addEventListener("input", (ev) => {
     state.lexiconFilter = ev.target.value || "";
-    renderLexiconRules();
+    if (plsSupported()) renderLexiconRules();
   });
 
   const player = $("#player");
@@ -418,17 +458,13 @@ async function init() {
   bind();
   try {
     state.config = await fetchConfig();
-    $("#brand").textContent = state.config.brand || "TAIL";
-    $("#subtitle").textContent = state.config.title || "Voice Lab";
-    document.title = `${state.config.brand || "TAIL"} — ${state.config.title || "Voice Lab"}`;
-    fillCharacters();
     fillVoices();
     fillScriptChips();
     renderOrthography();
     setModel("eleven_v3");
     if (!state.config.api_key_configured) {
       setStatus("Set ELEVENLABS_API_KEY in .env.", true);
-    } else if (!(currentCharacter()?.voices || []).length) {
+    } else if (!(state.config.voices || []).length) {
       setStatus("No voices configured.");
     }
   } catch (err) {
