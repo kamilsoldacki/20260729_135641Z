@@ -39,6 +39,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   font-family: var(--font);
   font-size: 15px;
   line-height: 1.55;
@@ -46,13 +47,16 @@ body {
   background-color: var(--bg);
   background-image:
     radial-gradient(ellipse 100% 70% at 50% -15%, rgba(255, 255, 255, 0.9), transparent 50%),
-    radial-gradient(ellipse 55% 45% at 100% 0%, rgba(99, 102, 241, 0.06), transparent 42%);
+    radial-gradient(ellipse 55% 45% at 100% 0%, rgba(82, 82, 91, 0.06), transparent 42%);
 }
 
 .app {
+  --app-pad-y: clamp(0.75rem, 2vw, 1.25rem);
+  --app-pad-x: clamp(1rem, 3vw, 1.75rem);
   max-width: 1280px;
   margin: 0 auto;
-  padding: clamp(1rem, 3vw, 1.75rem) clamp(1rem, 3vw, 1.75rem) 2rem;
+  padding: var(--app-pad-y) var(--app-pad-x);
+  box-sizing: border-box;
 }
 
 .grid {
@@ -67,13 +71,31 @@ body {
   flex-direction: column;
   gap: clamp(0.85rem, 2vw, 1.25rem);
   min-height: 0;
+  min-width: 0;
 }
 
 @media (min-width: 981px) {
+  /* One viewport: shared height for left stack + dictionary. */
+  .app {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+  }
+
   .left-stack,
   .lexicon-card {
-    height: min(82vh, 740px);
+    height: 100%;
+    max-height: 100%;
     min-height: 0;
+    overflow: hidden;
   }
 
   .control-card {
@@ -83,6 +105,7 @@ body {
   .prompt-card {
     flex: 1 1 auto;
     min-height: 0;
+    overflow: hidden;
   }
 }
 
@@ -227,8 +250,8 @@ body {
 
 .voice-block {
   flex-shrink: 0;
-  padding: 1.1rem var(--card-pad-x) 0;
-  margin-bottom: 0.75rem;
+  padding: 1rem var(--card-pad-x) 0;
+  margin-bottom: 0.55rem;
 }
 
 .voice-block h2 {

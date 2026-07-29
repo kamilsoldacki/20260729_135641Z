@@ -566,6 +566,22 @@ function bind() {
   bindAudioPlayer();
 }
 
+function showBootError(message) {
+  const msg = String(message || "Failed to load.");
+  const body = $("#dict-body");
+  if (body) body.textContent = msg;
+  const meta = $("#lexicon-meta");
+  if (meta) meta.textContent = msg;
+  const rules = $("#rules-body");
+  if (rules) {
+    rules.innerHTML =
+      '<tr><td colspan="3" class="rules-empty"></td></tr>';
+    const td = rules.querySelector("td");
+    if (td) td.textContent = msg;
+  }
+  setStatus(msg, true);
+}
+
 async function init() {
   bind();
   try {
@@ -579,7 +595,7 @@ async function init() {
       setStatus("No voices configured.");
     }
   } catch (err) {
-    setStatus(err.message || String(err), true);
+    showBootError(err.message || String(err));
   }
 }
 
