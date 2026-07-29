@@ -30,6 +30,15 @@
       "auto_create": true
     }
   },
+  "orthography": [
+    { "from": "x", "to": "ʃ" },
+    { "from": "dj", "to": "dʒ" },
+    { "from": "g", "to": "ɡ" },
+    { "from": "ie", "to": "i̯e" },
+    { "from": "ei", "to": "ei̯" },
+    { "from": "oi", "to": "oi̯" },
+    { "from": "problem", "to": "pobem" }
+  ],
   "sample_scripts": {
     "docx_bilingual": [
       "Degaemi, no pobem.",

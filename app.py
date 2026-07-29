@@ -220,6 +220,7 @@ def get_config() -> dict[str, Any]:
         "models": cfg.get("models", []),
         "characters": cfg.get("characters", []),
         "sample_scripts": cfg.get("sample_scripts", {}),
+        "orthography": cfg.get("orthography", []),
         "pronunciation": {
             "phoneme": cfg["pronunciation"]["phoneme"],
             "alias": alias,
@@ -305,6 +306,7 @@ def index() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
 
 
+app.mount("/data", StaticFiles(directory=DATA_DIR), name="data")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 

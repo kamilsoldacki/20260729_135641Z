@@ -20,7 +20,7 @@
       <p class="tagline" id="subtitle">Anzellan Voice Lab</p>
       <p class="lede">
         Test Vilo, Kado, and Jibu against the TAIL brief — raspy, high, fast, strained, mature.
-        Pronunciation dictionary attached on every generate (DOCX IPA on v3 · alias on v4).
+        Pronunciation dictionary attached on every generate; switch v3 / v4 to inspect the active lexicon below.
       </p>
     </header>
 
@@ -60,7 +60,7 @@
           </label>
         </div>
 
-        <div class="dict-card" id="dict-card">
+        <div class="dict-summary" id="dict-card">
           <div class="dict-title">Active lexicon</div>
           <div class="dict-body" id="dict-body">Loading…</div>
         </div>
@@ -91,6 +91,39 @@
           </div>
           <audio id="player" controls></audio>
         </div>
+      </div>
+    </section>
+
+    <section class="lexicon" id="lexicon" aria-label="Pronunciation dictionary contents">
+      <div class="lexicon-head">
+        <h2 class="lexicon-title">Dictionary contents</h2>
+        <p class="lexicon-meta" id="lexicon-meta">Loading lexicon…</p>
+      </div>
+
+      <div class="ortho-block">
+        <span class="label">Orthography</span>
+        <ul class="ortho-list" id="ortho-list"></ul>
+      </div>
+
+      <div class="rules-toolbar">
+        <p class="rules-count" id="rules-count">Entries</p>
+        <label class="sr-only" for="dict-filter">Filter dictionary entries</label>
+        <input type="search" id="dict-filter" class="rules-filter" placeholder="Filter grapheme…" autocomplete="off" />
+      </div>
+
+      <div class="rules-scroll">
+        <table class="rules-table">
+          <thead>
+            <tr>
+              <th scope="col">Grapheme</th>
+              <th scope="col" class="arrow" aria-hidden="true"></th>
+              <th scope="col" id="rules-value-head">Phoneme</th>
+            </tr>
+          </thead>
+          <tbody id="rules-body">
+            <tr><td colspan="3" class="rules-empty">Loading…</td></tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
