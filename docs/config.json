@@ -1,29 +1,29 @@
 {
   "brand": "TAIL",
-  "title": "Anzellan Voice Lab",
+  "title": "Voice Lab",
   "models": [
     {
       "id": "eleven_v3",
       "label": "Eleven v3",
       "dict_mode": "phoneme",
-      "note": "Phoneme PLS rules apply. Audio tags [emotion] supported."
+      "note": "Phoneme dictionary. Audio tags supported."
     },
     {
       "id": "eleven_v4",
       "label": "Eleven v4",
       "dict_mode": "alias",
-      "note": "Phoneme tags are skipped on non-v3/flash models — alias PLS is used per docs."
+      "note": "Alias dictionary (phoneme tags skipped)."
     }
   ],
   "pronunciation": {
     "phoneme": {
-      "name": "Anzellan EXACT DOCX (IPA)",
+      "name": "Anzellan IPA",
       "dictionary_id": "kGhqjTsEsWf2rfzEQ81a",
       "version_id": "rbVmbjPXniy9ZFAqRwV1",
       "pls_file": "anzellan_pronunciation_EXACT_DOCX.pls"
     },
     "alias": {
-      "name": "Anzellan ALIAS (v4 / non-phoneme)",
+      "name": "Anzellan alias",
       "dictionary_id": null,
       "version_id": null,
       "pls_file": "anzellan_pronunciation_ALIAS_v4.pls",
@@ -47,47 +47,72 @@
       "Tumunie, da power off!"
     ],
     "vilo_v3": "[impatient] Ba pilage, calm now! [commanding] Tumunie, da power off! [frustrated] Li aba? What broke?",
-    "kado_v3": "[sarcastic] Degaemi, no pobem. [arrogant] Ba pilage, calm now! [curiosity] Li aba? What broke?",
     "jibu_v3": "[excited] Degaemi, no pobem! Degaemi! [awe] Tumunie, da power off! [curious] Li aba? What broke?",
-    "accent_v3": "[curious] Li aba? What broke? [frustration] Tumunie, da power off! [tired] Ba pilage, calm now! [awe] Degaemi, no pobem."
+    "reference_v3": "[curious] Li aba? What broke? [frustration] Tumunie, da power off! [tired] Ba pilage, calm now! [awe] Degaemi, no pobem."
   },
   "characters": [
     {
-      "id": "vilo",
-      "name": "Vilo",
-      "traits": "commanding, impatient",
-      "default_script_key": "vilo_v3",
-      "voices": []
+      "id": "reference",
+      "name": "Reference",
+      "traits": "Original reference voices",
+      "default_script_key": "reference_v3",
+      "voices": [
+        { "id": "EymP3JiLS0PrnzRPWEVV", "label": "Anzellan_Erika" },
+        { "id": "1DmjW1FDog3uSm1FPAfG", "label": "Anzellan_Leslie" },
+        { "id": "86FIqFbRoVYqsbEykeDL", "label": "Anzellan_Ashley" }
+      ]
     },
     {
-      "id": "kado",
-      "name": "Kado",
-      "traits": "sarcastic, arrogant",
-      "default_script_key": "kado_v3",
-      "voices": []
+      "id": "vilo",
+      "name": "Vilo",
+      "traits": "",
+      "default_script_key": "vilo_v3",
+      "voices": [
+        { "id": "IvPAHWQKCcLHoMGPClxI", "label": "Vilo 1" },
+        { "id": "0S0vJq9iVSPYgjCAIuiS", "label": "Vilo 2" },
+        { "id": "St952KYyIUpzJrl08cUH", "label": "Vilo 3" },
+        { "id": "Wlz1LudTO79ktz1mWg4X", "label": "Vilo 4" },
+        { "id": "06DWysQU92pud237sVMm", "label": "Vilo 5" },
+        { "id": "6dKmMtiH4FCfzMp2bnCR", "label": "Vilo 6" },
+        { "id": "L5m1snJsfcHCj7QdtXGD", "label": "Vilo 7" },
+        { "id": "zosQzSLMsMgUE7cwTCjI", "label": "Vilo 8" },
+        { "id": "urZRBapgKi1PPvzsjXq0", "label": "Vilo 9" },
+        { "id": "U3w3AaYMxchOwdC1oxhC", "label": "Vilo 10" }
+      ]
     },
     {
       "id": "jibu",
       "name": "Jibu",
-      "traits": "childlike energy, excitable — mature alien, not childish timbre",
+      "traits": "",
       "default_script_key": "jibu_v3",
-      "voices": []
+      "voices": [
+        { "id": "8QVHAZWPZj56cKQ3r8bo", "label": "Jibu 1" },
+        { "id": "TM1iOCBFgngKttUTucqK", "label": "Jibu 2" },
+        { "id": "RjKYzPJmr8pgGABRH0Tz", "label": "Jibu 3" },
+        { "id": "22wgRYzxUPnktNJKczb3", "label": "Jibu 4" },
+        { "id": "tcNPCGdihqnA0LvylVt9", "label": "Jibu 5" },
+        { "id": "GNlWEXj993lVm03TGARF", "label": "Jibu 6" }
+      ]
     },
     {
-      "id": "accent",
-      "name": "Accent",
-      "traits": "Anzellan accent & conlang reference",
-      "default_script_key": "accent_v3",
-      "voices": []
+      "id": "experiment",
+      "name": "Experiment",
+      "traits": "",
+      "default_script_key": "reference_v3",
+      "voices": [
+        { "id": "UHvjhMwLBE5TxfHktuab", "label": "experiment 1" },
+        { "id": "BJ8CDPMRhh11ihoJiLnS", "label": "experiment 2" },
+        { "id": "JIf4vkEmNT0lrclEiUaF", "label": "experiment 3" },
+        { "id": "7FFyVHQEqjy83nMdENnH", "label": "experiment 4" },
+        { "id": "zGwFX8GNIDldbPNmEZC4", "label": "experiment 5" },
+        { "id": "5Z5SXEP0HglKUnA4WFP0", "label": "experiment 6" },
+        { "id": "cDjeEaRiuPC7YqBA6lLW", "label": "experiment 7" },
+        { "id": "nXMzKJbRXnzawuhAwj9a", "label": "experiment 8" },
+        { "id": "fZ1lYn04qD3xXKOuoseI", "label": "experiment 9" },
+        { "id": "sEXZOiWFuyVNLEQZd7EW", "label": "experiment 10" },
+        { "id": "fbHjjiGbPz2q1jnjjpMu", "label": "experiment 11" },
+        { "id": "ICES7eUKWBQiJOlalb8h", "label": "experiment 12" }
+      ]
     }
-  ],
-  "_voices_schema": {
-    "voice_entry": {
-      "id": "ElevenLabs voice_id",
-      "label": "Display name, e.g. Vilo RASP STRONG",
-      "tier": "close | strong | custom",
-      "pack": "optional pack tag, e.g. rasp_brief"
-    },
-    "note": "Fill characters[].voices later. Example: {\"id\": \"Wlz1LudTO79ktz1mWg4X\", \"label\": \"Vilo rasp close\", \"tier\": \"close\", \"pack\": \"rasp_brief\"}"
-  }
+  ]
 }

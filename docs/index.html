@@ -3,25 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TAIL — Anzellan Voice Lab</title>
+  <title>TAIL — Voice Lab</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="__BASE__/styles.css" />
 </head>
 <body>
-  <div class="atmosphere" aria-hidden="true"></div>
-  <div class="grain" aria-hidden="true"></div>
-
   <main class="stage">
     <header class="brand-block">
-      <p class="eyebrow">Character TTS · ElevenLabs</p>
+      <p class="eyebrow">TTS demo</p>
       <h1 class="brand" id="brand">TAIL</h1>
-      <p class="tagline" id="subtitle">Anzellan Voice Lab</p>
-      <p class="lede">
-        Test Vilo, Kado, and Jibu against the TAIL brief — raspy, high, fast, strained, mature.
-        Pronunciation dictionary attached on every generate; switch v3 / v4 to inspect the active lexicon below.
-      </p>
+      <p class="tagline" id="subtitle">Voice Lab</p>
     </header>
 
     <section class="console" aria-label="TTS console">
@@ -36,8 +29,8 @@
           <label for="voice">Voice</label>
           <select id="voice"></select>
           <label for="voice-manual" class="sr-only">Or paste voice ID</label>
-          <input type="text" id="voice-manual" placeholder="or paste voice_id…" autocomplete="off" spellcheck="false" />
-          <p class="hint muted" id="voice-hint">Add voice IDs in <code>docs/config.json</code>, or paste one above.</p>
+          <input type="text" id="voice-manual" placeholder="Paste voice ID…" autocomplete="off" spellcheck="false" />
+          <p class="hint muted" id="voice-hint">No voices in config — paste a voice ID above.</p>
         </div>
 
         <div class="field">
@@ -61,7 +54,7 @@
         </div>
 
         <div class="dict-summary" id="dict-card">
-          <div class="dict-title">Active lexicon</div>
+          <div class="dict-title">Active dictionary</div>
           <div class="dict-body" id="dict-body">Loading…</div>
         </div>
       </div>
@@ -72,7 +65,7 @@
             <label for="script">Script</label>
             <div class="chips" id="script-chips"></div>
           </div>
-          <textarea id="script" rows="8" spellcheck="false" placeholder="Paste bilingual Anzellan / English…"></textarea>
+          <textarea id="script" rows="8" spellcheck="false" placeholder="Enter script…"></textarea>
         </div>
 
         <div class="actions">
@@ -96,8 +89,8 @@
 
     <section class="lexicon" id="lexicon" aria-label="Pronunciation dictionary contents">
       <div class="lexicon-head">
-        <h2 class="lexicon-title">Dictionary contents</h2>
-        <p class="lexicon-meta" id="lexicon-meta">Loading lexicon…</p>
+        <h2 class="lexicon-title">Dictionary</h2>
+        <p class="lexicon-meta" id="lexicon-meta">Loading…</p>
       </div>
 
       <div class="ortho-block">
@@ -108,7 +101,7 @@
       <div class="rules-toolbar">
         <p class="rules-count" id="rules-count">Entries</p>
         <label class="sr-only" for="dict-filter">Filter dictionary entries</label>
-        <input type="search" id="dict-filter" class="rules-filter" placeholder="Filter grapheme…" autocomplete="off" />
+        <input type="search" id="dict-filter" class="rules-filter" placeholder="Filter…" autocomplete="off" />
       </div>
 
       <div class="rules-scroll">
@@ -128,7 +121,7 @@
     </section>
 
     <footer class="foot">
-      <p>Brief: TAIL Character Voice Specification · Orthography <code>x→ʃ</code> <code>dj→dʒ</code> <code>g→ɡ</code> · <code>problem→pobem</code></p>
+      <p>TAIL · Anzellan pronunciation</p>
     </footer>
   </main>
 

@@ -174,7 +174,7 @@ function renderLexiconRules() {
     td.className = "rules-empty";
     td.textContent = state.lexiconEntries.length
       ? "No entries match this filter."
-      : "No lexicon entries loaded.";
+      : "No entries loaded.";
     tr.appendChild(td);
     body.appendChild(tr);
     return;
@@ -269,17 +269,14 @@ function fillVoices() {
   if (!voices.length) {
     const opt = document.createElement("option");
     opt.value = "";
-    opt.textContent = "— no voices in config —";
+    opt.textContent = "No voices";
     sel.appendChild(opt);
     $("#voice-hint").hidden = false;
   } else {
     for (const v of voices) {
       const opt = document.createElement("option");
       opt.value = v.id;
-      const bits = [v.label || v.id];
-      if (v.tier) bits.push(v.tier);
-      if (v.pack) bits.push(v.pack);
-      opt.textContent = bits.join(" · ");
+      opt.textContent = v.label || v.id;
       sel.appendChild(opt);
     }
     $("#voice-hint").hidden = true;
@@ -312,7 +309,7 @@ function fillScriptChips() {
   const loadDefault = document.createElement("button");
   loadDefault.type = "button";
   loadDefault.className = "chip";
-  loadDefault.textContent = "Load character default";
+  loadDefault.textContent = "Default script";
   loadDefault.addEventListener("click", () => {
     const char = currentCharacter();
     const key = char?.default_script_key;
@@ -371,7 +368,7 @@ async function ensureAliasDictionary() {
   form.append("name", `Anzellan_ALIAS_v4_${plsFile.replace(/\.pls$/i, "")}`);
   form.append(
     "description",
-    "Anzellan alias lexicon for models that skip phoneme tags (TAIL DOCX).",
+    "Anzellan alias lexicon for non-phoneme models.",
   );
 
   const resp = await fetch(`${API_BASE}/v1/pronunciation-dictionaries/add-from-file`, {
@@ -452,7 +449,7 @@ async function generate() {
     return;
   }
   if (!voiceId) {
-    setStatus("Paste a voice_id or add entries in docs/config.json.", true);
+    setStatus("Select or paste a voice ID.", true);
     return;
   }
   if (!VOICE_ID_RE.test(voiceId)) {
@@ -484,7 +481,7 @@ async function generate() {
 
   const btn = $("#generate");
   btn.disabled = true;
-  setStatus(`Generating with ${state.modelId}…`);
+  setStatus("Generating…");
   $("#wave").classList.remove("playing");
 
   let dictApplied = false;
@@ -522,7 +519,7 @@ async function generate() {
     $("#player-wrap").hidden = false;
     $("#download").disabled = false;
 
-    setStatus(dictApplied ? `Ready · dict ${dictId || "on"}` : "Ready · dictionary off");
+    setStatus(dictApplied ? `Ready · dictionary ${dictId || "on"}` : "Ready · dictionary off");
 
     try {
       await player.play();
@@ -570,17 +567,17 @@ async function init() {
   try {
     state.config = await fetchConfig();
     $("#brand").textContent = state.config.brand || "TAIL";
-    $("#subtitle").textContent = state.config.title || "Anzellan Voice Lab";
-    document.title = `${state.config.brand || "TAIL"} — ${state.config.title || "Anzellan Voice Lab"}`;
+    $("#subtitle").textContent = state.config.title || "Voice Lab";
+    document.title = `${state.config.brand || "TAIL"} — ${state.config.title || "Voice Lab"}`;
     fillCharacters();
     fillVoices();
     fillScriptChips();
     renderOrthography();
     setModel("eleven_v3");
     if (!apiKeyConfigured()) {
-      setStatus("Missing API key — deploy with GitHub Actions (secret ELEVENLABS_API_KEY).", true);
+      setStatus("Missing API key — deploy with GitHub Actions.", true);
     } else if (!(currentCharacter()?.voices || []).length) {
-      setStatus("Voices empty — paste IDs into docs/config.json when you have them.");
+      setStatus("No voices configured.");
     }
   } catch (err) {
     setStatus(err.message || String(err), true);

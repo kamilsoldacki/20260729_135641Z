@@ -129,7 +129,7 @@ function renderLexiconRules() {
     td.className = "rules-empty";
     td.textContent = state.lexiconEntries.length
       ? "No entries match this filter."
-      : "No lexicon entries loaded.";
+      : "No entries loaded.";
     tr.appendChild(td);
     body.appendChild(tr);
     return;
@@ -224,17 +224,14 @@ function fillVoices() {
   if (!voices.length) {
     const opt = document.createElement("option");
     opt.value = "";
-    opt.textContent = "— no voices in config —";
+    opt.textContent = "No voices";
     sel.appendChild(opt);
     $("#voice-hint").hidden = false;
   } else {
     for (const v of voices) {
       const opt = document.createElement("option");
       opt.value = v.id;
-      const bits = [v.label || v.id];
-      if (v.tier) bits.push(v.tier);
-      if (v.pack) bits.push(v.pack);
-      opt.textContent = bits.join(" · ");
+      opt.textContent = v.label || v.id;
       sel.appendChild(opt);
     }
     $("#voice-hint").hidden = true;
@@ -267,7 +264,7 @@ function fillScriptChips() {
   const loadDefault = document.createElement("button");
   loadDefault.type = "button";
   loadDefault.className = "chip";
-  loadDefault.textContent = "Load character default";
+  loadDefault.textContent = "Default script";
   loadDefault.addEventListener("click", () => {
     const char = currentCharacter();
     const key = char?.default_script_key;
@@ -315,7 +312,7 @@ async function generate() {
   const voiceId = resolvedVoiceId();
   const text = $("#script").value.trim();
   if (!voiceId) {
-    setStatus("Paste a voice_id or add entries in config/voices.json.", true);
+    setStatus("Select or paste a voice ID.", true);
     return;
   }
   if (!text) {
@@ -338,7 +335,7 @@ async function generate() {
 
   const btn = $("#generate");
   btn.disabled = true;
-  setStatus(`Generating with ${state.modelId}…`);
+  setStatus("Generating…");
   $("#wave").classList.remove("playing");
 
   try {
@@ -372,7 +369,7 @@ async function generate() {
     const dictId = res.headers.get("X-Dict-Id") || "";
     setStatus(
       dictApplied
-        ? `Ready · dict ${dictId || "on"}`
+        ? `Ready · dictionary ${dictId || "on"}`
         : "Ready · dictionary off",
     );
 
@@ -422,17 +419,17 @@ async function init() {
   try {
     state.config = await fetchConfig();
     $("#brand").textContent = state.config.brand || "TAIL";
-    $("#subtitle").textContent = state.config.title || "Anzellan Voice Lab";
-    document.title = `${state.config.brand || "TAIL"} — ${state.config.title || "Anzellan Voice Lab"}`;
+    $("#subtitle").textContent = state.config.title || "Voice Lab";
+    document.title = `${state.config.brand || "TAIL"} — ${state.config.title || "Voice Lab"}`;
     fillCharacters();
     fillVoices();
     fillScriptChips();
     renderOrthography();
     setModel("eleven_v3");
     if (!state.config.api_key_configured) {
-      setStatus("Copy .env.example → .env and set ELEVENLABS_API_KEY.", true);
+      setStatus("Set ELEVENLABS_API_KEY in .env.", true);
     } else if (!(currentCharacter()?.voices || []).length) {
-      setStatus("Voices empty — paste IDs into config/voices.json when you have them.");
+      setStatus("No voices configured.");
     }
   } catch (err) {
     setStatus(err.message || String(err), true);
