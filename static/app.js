@@ -94,8 +94,9 @@ function syncDictControls() {
   const row = $("#use-dict-row") || wrap?.closest(".field.row");
   const title = $("#dict-title");
 
-  title.textContent = "Active dictionary";
-  label.textContent = "Pronunciation dictionary";
+  if (title) title.textContent = "Active dictionary";
+  if (label) label.textContent = "Pronunciation dictionary";
+  if (!checkbox) return;
 
   if (supported) {
     if (row) row.hidden = false;
@@ -260,7 +261,8 @@ function clientDictNote() {
 
 function updateDictCard() {
   const note = clientDictNote();
-  $("#dict-body").textContent = note;
+  const body = $("#dict-body");
+  if (body) body.textContent = note;
   const metaEl = $("#lexicon-meta");
   if (metaEl) metaEl.textContent = note;
 }

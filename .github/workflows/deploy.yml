@@ -43,9 +43,32 @@ jobs:
           echo "key=$key" >> "$GITHUB_OUTPUT"
 
       - name: Set GitHub Pages asset paths
+        env:
+          PAGES_BASE: /${{ github.event.repository.name }}
         run: |
-          base="/${{ github.event.repository.name }}"
-          sed -i "s|__BASE__|${base}|g" docs/index.html docs/app.js
+          python3 <<'PY'
+          import os, pathlib
+          base = os.environ["PAGES_BASE"].rstrip("/")
+          html_path = pathlib.Path("docs/index.html")
+          js_path = pathlib.Path("docs/app.js")
+          html = html_path.read_text(encoding="utf-8")
+          # Absolutize relative asset links so pages work without trailing slash.
+          for rel, abs_path in (
+              ('href="./styles.css"', f'href="{base}/styles.css"'),
+              ('src="./app.js"', f'src="{base}/app.js"'),
+          ):
+              if rel not in html:
+                  raise SystemExit(f"Missing asset ref in index.html: {rel}")
+              html = html.replace(rel, abs_path, 1)
+          html_path.write_text(html, encoding="utf-8")
+          js = js_path.read_text(encoding="utf-8")
+          old = 'const BASE_RAW = "__BASE__";'
+          new = f'const BASE_RAW = "{base}";'
+          if old not in js:
+              raise SystemExit("BASE_RAW placeholder not found in app.js")
+          # Replace assignment only — never touch the "__BASE__" sentinel compare.
+          js_path.write_text(js.replace(old, new, 1), encoding="utf-8")
+          PY
 
       - name: Inject API key into app.js
         env:

@@ -1,7 +1,12 @@
 const API_KEY = "__INJECT_KEY__";
-/** Deploy replaces __BASE__ with /<repo>; left as placeholder → relative ./ paths. */
+/**
+ * Deploy replaces ONLY this assignment value with "/<repo>".
+ * Do not globally sed __BASE__ - that also rewrites the sentinel check and empties BASE.
+ * Unreplaced placeholder -> relative ./ paths (local docs/ preview).
+ */
 const BASE_RAW = "__BASE__";
-const BASE = (BASE_RAW === "__BASE__" || !BASE_RAW ? "" : BASE_RAW).replace(/\/$/, "");
+const BASE =
+  !BASE_RAW || BASE_RAW === "__BASE__" ? "" : String(BASE_RAW).replace(/\/$/, "");
 const API_BASE = "https://api.elevenlabs.io";
 const ALLOWED_MODELS = new Set(["eleven_v3", "eleven_v4"]);
 const VOICE_ID_RE = /^[A-Za-z0-9]{10,64}$/;
@@ -139,8 +144,9 @@ function syncDictControls() {
   const row = $("#use-dict-row") || wrap?.closest(".field.row");
   const title = $("#dict-title");
 
-  title.textContent = "Active dictionary";
-  label.textContent = "Pronunciation dictionary";
+  if (title) title.textContent = "Active dictionary";
+  if (label) label.textContent = "Pronunciation dictionary";
+  if (!checkbox) return;
 
   if (supported) {
     if (row) row.hidden = false;
@@ -305,7 +311,8 @@ function clientDictNote() {
 
 function updateDictCard() {
   const note = clientDictNote();
-  $("#dict-body").textContent = note;
+  const body = $("#dict-body");
+  if (body) body.textContent = note;
   const metaEl = $("#lexicon-meta");
   if (metaEl) metaEl.textContent = note;
 }
