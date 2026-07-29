@@ -14,39 +14,27 @@
         <div class="card-column-body">
           <section class="voice-block" aria-labelledby="voice-heading">
             <h2 id="voice-heading">Voice</h2>
-            <p class="field-hint">Pick a voice, then Generate. Switch models to update the dictionary.</p>
+            <p class="field-hint">Pick a voice, then Generate in the Script panel.</p>
             <label class="select-wrap" for="voice">
               <span class="visually-hidden">Voice</span>
               <select id="voice" class="select"></select>
             </label>
           </section>
 
-          <section class="call-block" aria-label="Generate">
+          <section class="call-block" aria-label="Model and dictionary">
             <div class="field">
               <span class="label">Model</span>
               <div class="segment" role="group" aria-label="Model">
                 <button type="button" class="seg active" data-model="eleven_v3" id="model-v3">v3</button>
                 <button type="button" class="seg" data-model="eleven_v4" id="model-v4">v4</button>
               </div>
-              <p class="hint" id="model-note"></p>
             </div>
 
-            <div class="field row">
+            <div class="field row" id="use-dict-row">
               <label class="check" id="use-dict-wrap">
                 <input type="checkbox" id="use-dict" checked />
                 <span id="use-dict-label">Pronunciation dictionary</span>
               </label>
-            </div>
-
-            <div class="generate-surface" id="generate-surface">
-              <div class="call-actions">
-                <button type="button" class="btn btn-primary" id="generate">
-                  <span class="btn-icon" aria-hidden="true">●</span>
-                  <span class="cta-label">Generate</span>
-                </button>
-                <button type="button" class="btn btn-ghost" id="download" disabled>Download MP3</button>
-              </div>
-              <p class="status" id="status" role="status"></p>
             </div>
 
             <dl class="metrics" id="dict-card">
@@ -57,7 +45,6 @@
             </dl>
           </section>
         </div>
-        <p class="card-model-foot" id="model-foot" aria-label="Active model">eleven_v3</p>
       </aside>
 
       <main class="card prompt-card" aria-labelledby="script-heading">
@@ -74,12 +61,38 @@
             <label class="visually-hidden" for="script">Script</label>
             <textarea id="script" class="prompt-body" spellcheck="false" placeholder="Enter script…"></textarea>
           </div>
-          <div class="player script-player" id="player-wrap" hidden>
-            <div class="wave" id="wave" aria-hidden="true">
-              <span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span>
+
+          <div class="script-actions" id="script-actions">
+            <div class="script-action-row">
+              <button type="button" class="btn btn-compact btn-primary" id="generate">Generate</button>
+              <button type="button" class="btn btn-compact btn-ghost" id="download" disabled>Download</button>
             </div>
-            <audio id="player" controls></audio>
+            <p class="status" id="status" role="status"></p>
+          </div>
+
+          <div class="player script-player" id="player-wrap" hidden>
+            <div class="audio-bar">
+              <button type="button" class="audio-toggle" id="audio-toggle" aria-label="Play">
+                <span class="audio-toggle-icon" aria-hidden="true">▶</span>
+              </button>
+              <div class="audio-main">
+                <input
+                  type="range"
+                  class="audio-seek"
+                  id="audio-seek"
+                  min="0"
+                  max="1000"
+                  value="0"
+                  step="1"
+                  aria-label="Seek"
+                />
+                <div class="audio-times">
+                  <span id="audio-current">0:00</span>
+                  <span id="audio-duration">0:00</span>
+                </div>
+              </div>
+            </div>
+            <audio id="player" preload="metadata"></audio>
           </div>
         </div>
       </main>

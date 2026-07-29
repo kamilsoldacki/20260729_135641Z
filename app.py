@@ -141,7 +141,8 @@ def ensure_alias_dictionary(cfg: dict[str, Any]) -> dict[str, str]:
 
         key = api_key()
         name = f"Anzellan_ALIAS_v4_{pls_path.stem}"
-        with httpx.Client(timeout=60.0) as client:
+        # trust_env=False: ignore broken HTTP(S)_PROXY from IDE sandboxes
+        with httpx.Client(timeout=60.0, trust_env=False) as client:
             files = {"file": (pls_path.name, pls_path.read_bytes(), "application/pls+xml")}
             data = {
                 "name": name,
@@ -228,11 +229,13 @@ def get_config() -> dict[str, Any]:
     alias = dict(cfg["pronunciation"]["alias"])
     if not alias.get("dictionary_id") and cache.get("alias"):
         alias.update(cache["alias"])
+    # Prefer voices[]; fall back to legacy characters[] key
+    voices = cfg.get("voices") or cfg.get("characters") or []
     return {
         "brand": cfg.get("brand", "TAIL"),
         "title": cfg.get("title", "Anzellan Voice Lab"),
         "models": cfg.get("models", []),
-        "voices": cfg.get("voices", []),
+        "voices": voices,
         "sample_scripts": cfg.get("sample_scripts", {}),
         "orthography": cfg.get("orthography", []),
         "pronunciation": {
@@ -286,22 +289,31 @@ def tts(req: TtsRequest) -> Response:
             "locator": locator,
         }
 
-    with httpx.Client(timeout=180.0) as client:
-        resp = client.post(
-            f"{API_BASE}/v1/text-to-speech/{req.voice_id}",
-            headers={
-                "xi-api-key": key,
-                "Content-Type": "application/json",
-                "Accept": "audio/mpeg",
-            },
-            json=payload,
-        )
-        if resp.status_code >= 400:
-            raise HTTPException(
-                status_code=502,
-                detail=f"ElevenLabs error {resp.status_code}: {resp.text[:800]}",
+    try:
+        # trust_env=False: ignore broken HTTP(S)_PROXY from IDE sandboxes
+        with httpx.Client(timeout=180.0, trust_env=False) as client:
+            resp = client.post(
+                f"{API_BASE}/v1/text-to-speech/{req.voice_id}",
+                headers={
+                    "xi-api-key": key,
+                    "Content-Type": "application/json",
+                    "Accept": "audio/mpeg",
+                },
+                json=payload,
             )
-        audio = resp.content
+            if resp.status_code >= 400:
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"ElevenLabs error {resp.status_code}: {resp.text[:800]}",
+                )
+            audio = resp.content
+    except HTTPException:
+        raise
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"ElevenLabs request failed: {exc}",
+        ) from exc
 
     headers = {
         "Content-Disposition": 'inline; filename="anzellan_tts.mp3"',

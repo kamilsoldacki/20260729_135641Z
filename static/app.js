@@ -91,27 +91,23 @@ function syncDictControls() {
   const checkbox = $("#use-dict");
   const label = $("#use-dict-label");
   const wrap = $("#use-dict-wrap");
-  const row = wrap?.closest(".field.row");
+  const row = $("#use-dict-row") || wrap?.closest(".field.row");
   const title = $("#dict-title");
-  const note = $("#model-note");
-  const meta = modelMeta();
+
+  title.textContent = "Active dictionary";
+  label.textContent = "Pronunciation dictionary";
 
   if (supported) {
     if (row) row.hidden = false;
     checkbox.disabled = false;
     wrap?.classList.remove("is-disabled");
     if (!checkbox.dataset.userTouched) checkbox.checked = true;
-    label.textContent = "Pronunciation dictionary";
-    title.textContent = "Active dictionary";
-    note.textContent = meta.note || "";
   } else {
+    // v4: no checkbox; IPA rewrite runs automatically on Generate.
     if (row) row.hidden = true;
     checkbox.checked = false;
     checkbox.disabled = true;
-    wrap?.classList.add("is-disabled");
-    label.textContent = "Pronunciation applied automatically";
-    title.textContent = "Pronunciation";
-    note.textContent = "Pronunciation applied automatically";
+    wrap?.classList.remove("is-disabled");
   }
 }
 
@@ -152,9 +148,7 @@ function renderLexiconRules() {
       )
     : state.lexiconEntries;
 
-  $("#rules-count").textContent = filter
-    ? `${visible.length} / ${state.lexiconEntries.length} entries`
-    : `${state.lexiconEntries.length} entries`;
+  $("#rules-count").textContent = filter ? "Matching entries" : "Entries";
   $("#rules-value-head").textContent =
     state.lexiconKind === "alias" ? "Alias" : "Phoneme (IPA)";
 
@@ -256,31 +250,19 @@ function applyInlineIpaFromEntries(text, entries) {
   return { text: work, replacements };
 }
 
-function updateDictCard() {
+function clientDictNote() {
+  const meta = modelMeta();
   if (!plsSupported()) {
-    const pls = state.ipaPlsName || ipaRewritePlsCandidates()[0] || "PLS";
-    $("#dict-body").textContent = [
-      "Auto IPA on Generate",
-      "Pronunciation applied automatically",
-      `pls: ${pls}`,
-    ].join("\n");
-    return;
+    return meta.note || "Pronunciation applied automatically";
   }
+  return meta.note || "Pronunciation dictionary applied · Alias + phonemes";
+}
 
-  const mode = currentDictMode();
-  const block = currentDictBlock();
-  const lines = [
-    block.name || mode,
-    `mode: ${mode}`,
-    `id: ${block.dictionary_id || block.id || "(not configured)"}`,
-  ];
-  if (block.version_id) lines.push(`version: ${block.version_id}`);
-  if (block.pls_file) lines.push(`pls: ${block.pls_file}`);
-  $("#dict-body").textContent = lines.join("\n");
-
-  const metaBits = [block.name || mode, mode];
-  if (block.pls_file) metaBits.push(block.pls_file);
-  $("#lexicon-meta").textContent = metaBits.join(" · ");
+function updateDictCard() {
+  const note = clientDictNote();
+  $("#dict-body").textContent = note;
+  const metaEl = $("#lexicon-meta");
+  if (metaEl) metaEl.textContent = note;
 }
 
 async function loadActiveLexicon() {
@@ -300,16 +282,13 @@ async function loadActiveLexicon() {
       state.ipaPlsName = loaded.plsName;
       renderLexiconRules();
       updateDictCard();
-      $("#lexicon-meta").textContent = loaded.plsName
-        ? `Auto IPA · ${loaded.plsName} · ${loaded.entries.length} rules`
-        : "Auto IPA · no PLS loaded";
     } catch (err) {
       if (token !== state.lexiconLoadToken) return;
       state.lexiconEntries = [];
       state.lexiconKind = "phoneme";
       state.ipaPlsName = null;
       renderLexiconRules();
-      $("#lexicon-meta").textContent = `Could not load IPA rules: ${err.message || err}`;
+      $("#lexicon-meta").textContent = "Could not load pronunciation entries.";
     }
     return;
   }
@@ -323,7 +302,7 @@ async function loadActiveLexicon() {
     state.lexiconEntries = [];
     state.lexiconKind = mode === "alias" ? "alias" : "phoneme";
     renderLexiconRules();
-    $("#lexicon-meta").textContent = `${block.name || mode} · no PLS file configured`;
+    updateDictCard();
     return;
   }
 
@@ -333,25 +312,20 @@ async function loadActiveLexicon() {
     state.lexiconEntries = entries;
     state.lexiconKind = entries[0]?.kind || (mode === "alias" ? "alias" : "phoneme");
     renderLexiconRules();
-    $("#lexicon-meta").textContent = [
-      block.name || mode,
-      mode,
-      plsName,
-      `${entries.length} rules`,
-    ].join(" · ");
+    updateDictCard();
   } catch (err) {
     if (token !== state.lexiconLoadToken) return;
     state.lexiconEntries = [];
     state.lexiconKind = mode === "alias" ? "alias" : "phoneme";
     renderLexiconRules();
-    $("#lexicon-meta").textContent = `Could not load ${plsName}: ${err.message || err}`;
+    $("#lexicon-meta").textContent = "Could not load pronunciation entries.";
   }
 }
 
 function fillVoices() {
   const sel = $("#voice");
   sel.innerHTML = "";
-  const voices = state.config.voices || [];
+  const voices = state.config.voices || state.config.characters || [];
 
   if (!voices.length) {
     const opt = document.createElement("option");
@@ -387,10 +361,76 @@ function setModel(modelId) {
   document.querySelectorAll(".seg").forEach((el) => {
     el.classList.toggle("active", el.dataset.model === modelId);
   });
-  const foot = $("#model-foot");
-  if (foot) foot.textContent = modelId;
   delete $("#use-dict").dataset.userTouched;
   loadActiveLexicon();
+}
+
+function formatTime(sec) {
+  if (!Number.isFinite(sec) || sec < 0) return "0:00";
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function syncAudioUi() {
+  const player = $("#player");
+  const toggle = $("#audio-toggle");
+  const icon = toggle?.querySelector(".audio-toggle-icon");
+  const seek = $("#audio-seek");
+  const cur = $("#audio-current");
+  const dur = $("#audio-duration");
+  if (!player) return;
+
+  const duration = player.duration || 0;
+  const current = player.currentTime || 0;
+  if (dur) dur.textContent = formatTime(duration);
+  if (cur) cur.textContent = formatTime(current);
+  if (seek && !seek.dataset.seeking) {
+    seek.value = String(duration ? Math.round((current / duration) * 1000) : 0);
+  }
+  const playing = !player.paused && !player.ended && Boolean(player.src);
+  if (toggle) toggle.setAttribute("aria-label", playing ? "Pause" : "Play");
+  if (icon) icon.textContent = playing ? "❚❚" : "▶";
+}
+
+function bindAudioPlayer() {
+  const player = $("#player");
+  const toggle = $("#audio-toggle");
+  const seek = $("#audio-seek");
+  if (!player || !toggle || !seek) return;
+
+  toggle.addEventListener("click", async () => {
+    if (!player.src) return;
+    if (player.paused) {
+      try {
+        await player.play();
+      } catch {
+        /* autoplay may be blocked */
+      }
+    } else {
+      player.pause();
+    }
+  });
+
+  const endSeek = () => {
+    delete seek.dataset.seeking;
+  };
+  seek.addEventListener("pointerdown", () => {
+    seek.dataset.seeking = "1";
+  });
+  seek.addEventListener("pointerup", endSeek);
+  seek.addEventListener("pointercancel", endSeek);
+  seek.addEventListener("change", endSeek);
+  seek.addEventListener("input", () => {
+    const duration = player.duration || 0;
+    if (!duration) return;
+    player.currentTime = (Number(seek.value) / 1000) * duration;
+    syncAudioUi();
+  });
+
+  for (const ev of ["timeupdate", "loadedmetadata", "durationchange", "play", "pause", "ended"]) {
+    player.addEventListener(ev, syncAudioUi);
+  }
 }
 
 function resolvedVoiceId() {
@@ -441,7 +481,6 @@ async function generate() {
   const btn = $("#generate");
   btn.disabled = true;
   setStatus("Generating…");
-  $("#wave").classList.remove("playing");
 
   let ipaReplacements = 0;
 
@@ -486,15 +525,15 @@ async function generate() {
     player.src = state.lastUrl;
     $("#player-wrap").hidden = false;
     $("#download").disabled = false;
+    syncAudioUi();
 
     const dictApplied = res.headers.get("X-Dict-Applied") === "1";
-    const dictId = res.headers.get("X-Dict-Id") || "";
     if (dictApplied) {
-      setStatus(`Ready · dictionary ${dictId || "on"}`);
+      setStatus("Ready · dictionary on");
     } else if (!plsSupported()) {
       setStatus(
         ipaReplacements
-          ? `Ready · pronunciation applied (${ipaReplacements})`
+          ? "Ready · pronunciation applied"
           : "Ready · pronunciation applied automatically",
       );
     } else {
@@ -503,7 +542,6 @@ async function generate() {
 
     try {
       await player.play();
-      $("#wave").classList.add("playing");
     } catch (_) {
       /* autoplay may be blocked */
     }
@@ -537,11 +575,7 @@ function bind() {
     renderLexiconRules();
   });
   bindLoadDefault();
-
-  const player = $("#player");
-  player.addEventListener("play", () => $("#wave").classList.add("playing"));
-  player.addEventListener("pause", () => $("#wave").classList.remove("playing"));
-  player.addEventListener("ended", () => $("#wave").classList.remove("playing"));
+  bindAudioPlayer();
 }
 
 async function init() {
@@ -553,7 +587,7 @@ async function init() {
     setModel("eleven_v3");
     if (!state.config.api_key_configured) {
       setStatus("Set ELEVENLABS_API_KEY in .env.", true);
-    } else if (!(state.config.voices || []).length) {
+    } else if (!(state.config.voices || state.config.characters || []).length) {
       setStatus("No voices configured.");
     }
   } catch (err) {
