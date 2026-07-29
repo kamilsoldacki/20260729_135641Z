@@ -33,6 +33,7 @@ const state = {
   lexiconKind: "phoneme",
   lexiconFilter: "",
   lexiconLoadToken: 0,
+  ipaPlsName: null,
 };
 
 function escapeHtml(value) {
@@ -135,24 +136,27 @@ function syncDictControls() {
   const checkbox = $("#use-dict");
   const label = $("#use-dict-label");
   const wrap = $("#use-dict-wrap");
+  const row = wrap?.closest(".field.row");
   const title = $("#dict-title");
   const note = $("#model-note");
   const meta = modelMeta();
 
-  note.textContent = meta.note || "";
-
   if (supported) {
+    if (row) row.hidden = false;
     checkbox.disabled = false;
     wrap?.classList.remove("is-disabled");
     if (!checkbox.dataset.userTouched) checkbox.checked = true;
     label.textContent = "Pronunciation dictionary";
     title.textContent = "Active dictionary";
+    note.textContent = meta.note || "";
   } else {
+    if (row) row.hidden = true;
     checkbox.checked = false;
     checkbox.disabled = true;
     wrap?.classList.add("is-disabled");
-    label.textContent = "Inline IPA in script";
+    label.textContent = "Pronunciation applied automatically";
     title.textContent = "Pronunciation";
+    note.textContent = "Pronunciation applied automatically";
   }
 }
 
@@ -222,14 +226,89 @@ function renderLexiconRules() {
   body.appendChild(frag);
 }
 
+function ipaRewritePlsCandidates() {
+  const phoneme = safePlsBasename(state.config.pronunciation?.phoneme?.pls_file);
+  const alias = safePlsBasename(state.config.pronunciation?.alias?.pls_file);
+  return [...new Set([phoneme, alias].filter(Boolean))];
+}
+
+async function fetchPlsEntries(plsName) {
+  const res = await fetch(asset(`data/${plsName}`));
+  if (!res.ok) throw new Error(`Failed to load ${plsName}`);
+  return parsePls(await res.text());
+}
+
+/** Prefer phoneme EXACT DOCX PLS; fall back to alias PLS. */
+async function loadIpaRewriteEntries() {
+  for (const plsName of ipaRewritePlsCandidates()) {
+    try {
+      const entries = await fetchPlsEntries(plsName);
+      if (!entries.length) continue;
+      return {
+        entries,
+        plsName,
+        kind: entries[0]?.kind || (plsName.toLowerCase().includes("alias") ? "alias" : "phoneme"),
+      };
+    } catch {
+      /* try next candidate */
+    }
+  }
+  return { entries: [], plsName: null, kind: "phoneme" };
+}
+
+function wrapInlineIpa(value) {
+  const cleaned = String(value || "").replace(/^\/+|\/+$/g, "").trim();
+  return cleaned ? `/${cleaned}/` : "";
+}
+
+/**
+ * Rewrite orthographic words to ElevenLabs v4 inline IPA (/…/).
+ * Longest whole-word match; exact case from PLS first, then case-insensitive.
+ * Leaves existing /…/ spans untouched.
+ */
+function applyInlineIpaFromEntries(text, entries) {
+  if (!text || !entries?.length) return { text, replacements: 0 };
+
+  const byExact = new Map();
+  const byLower = new Map();
+  for (const entry of entries) {
+    const grapheme = entry.grapheme;
+    if (!grapheme) continue;
+    if (!byExact.has(grapheme)) byExact.set(grapheme, entry.value);
+    const lower = grapheme.toLowerCase();
+    if (!byLower.has(lower)) byLower.set(lower, entry.value);
+  }
+
+  const protectedSpans = [];
+  let work = String(text).replace(/\/[^/\n]+\//g, (match) => {
+    const idx = protectedSpans.length;
+    protectedSpans.push(match);
+    return `\0IPA${idx}\0`;
+  });
+
+  let replacements = 0;
+  work = work.replace(/\p{L}[\p{L}\p{M}']*/gu, (word) => {
+    let value = byExact.get(word);
+    if (value == null) value = byLower.get(word.toLowerCase());
+    if (value == null) return word;
+    const wrapped = wrapInlineIpa(value);
+    if (!wrapped) return word;
+    replacements += 1;
+    return wrapped;
+  });
+
+  work = work.replace(/\0IPA(\d+)\0/g, (_, idx) => protectedSpans[Number(idx)] || "");
+  return { text: work, replacements };
+}
+
 function updateDictCard() {
   if (!plsSupported()) {
+    const pls = state.ipaPlsName || ipaRewritePlsCandidates()[0] || "PLS";
     $("#dict-body").textContent = [
-      "Preview model",
-      "PLS dictionaries arrive with the public v4 release.",
-      "Tip: put IPA in slashes in the script, e.g. /ˈnaɪki/.",
+      "Auto IPA on Generate",
+      "Pronunciation applied automatically",
+      `pls: ${pls}`,
     ].join("\n");
-    $("#lexicon-meta").textContent = "Inline IPA · PLS with public v4";
     return;
   }
 
@@ -249,36 +328,41 @@ function updateDictCard() {
   $("#lexicon-meta").textContent = metaBits.join(" · ");
 }
 
-function renderInlineIpaPanel() {
-  state.lexiconEntries = [];
-  state.lexiconKind = "phoneme";
-  $("#rules-count").textContent = "Inline IPA";
-  $("#rules-value-head").textContent = "Phoneme (IPA)";
-  const body = $("#rules-body");
-  body.replaceChildren();
-  const tr = document.createElement("tr");
-  const td = document.createElement("td");
-  td.colSpan = 3;
-  td.className = "rules-empty";
-  td.textContent =
-    "PLS not wired on preview v4 yet. Use inline IPA in the script (e.g. /ˈnaɪki/). Full dictionaries arrive with the public v4 release.";
-  tr.appendChild(td);
-  body.appendChild(tr);
-}
-
 async function loadActiveLexicon() {
   const token = ++state.lexiconLoadToken;
   syncDictControls();
   updateDictCard();
 
+  $("#rules-body").innerHTML =
+    '<tr><td colspan="3" class="rules-empty">Loading dictionary…</td></tr>';
+
   if (!plsSupported()) {
-    renderInlineIpaPanel();
+    try {
+      const loaded = await loadIpaRewriteEntries();
+      if (token !== state.lexiconLoadToken) return;
+      state.lexiconEntries = loaded.entries;
+      state.lexiconKind = loaded.kind;
+      state.ipaPlsName = loaded.plsName;
+      renderLexiconRules();
+      updateDictCard();
+      $("#lexicon-meta").textContent = loaded.plsName
+        ? `Auto IPA · ${loaded.plsName} · ${loaded.entries.length} rules`
+        : "Auto IPA · no PLS loaded";
+    } catch (err) {
+      if (token !== state.lexiconLoadToken) return;
+      state.lexiconEntries = [];
+      state.lexiconKind = "phoneme";
+      state.ipaPlsName = null;
+      renderLexiconRules();
+      $("#lexicon-meta").textContent = `Could not load IPA rules: ${err.message || err}`;
+    }
     return;
   }
 
   const mode = currentDictMode();
   const block = currentDictBlock();
   const plsName = safePlsBasename(block.pls_file);
+  state.ipaPlsName = null;
 
   if (!plsName) {
     state.lexiconEntries = [];
@@ -288,15 +372,9 @@ async function loadActiveLexicon() {
     return;
   }
 
-  $("#rules-body").innerHTML =
-    '<tr><td colspan="3" class="rules-empty">Loading dictionary…</td></tr>';
-
   try {
-    const res = await fetch(asset(`data/${plsName}`));
-    if (!res.ok) throw new Error(`Failed to load ${plsName}`);
-    const xml = await res.text();
+    const entries = await fetchPlsEntries(plsName);
     if (token !== state.lexiconLoadToken) return;
-    const entries = parsePls(xml);
     state.lexiconEntries = entries;
     state.lexiconKind = entries[0]?.kind || (mode === "alias" ? "alias" : "phoneme");
     renderLexiconRules();
@@ -503,19 +581,10 @@ async function generate() {
     return;
   }
 
-  const seedRaw = $("#seed").value.trim();
   const payload = {
     text,
     model_id: state.modelId,
   };
-  if (seedRaw !== "") {
-    const seed = Number(seedRaw);
-    if (!Number.isFinite(seed) || seed < 0) {
-      setStatus("Seed must be a non-negative number.", true);
-      return;
-    }
-    payload.seed = seed;
-  }
 
   const btn = $("#generate");
   btn.disabled = true;
@@ -524,9 +593,25 @@ async function generate() {
 
   let dictApplied = false;
   let dictId = "";
+  let ipaReplacements = 0;
   const attachDict = $("#use-dict").checked && plsSupported();
 
   try {
+    if (!plsSupported()) {
+      setStatus("Applying pronunciation…");
+      let entries = state.lexiconEntries;
+      if (!entries.length) {
+        const loaded = await loadIpaRewriteEntries();
+        entries = loaded.entries;
+        state.lexiconEntries = loaded.entries;
+        state.lexiconKind = loaded.kind;
+        state.ipaPlsName = loaded.plsName;
+      }
+      const rewritten = applyInlineIpaFromEntries(text, entries);
+      payload.text = rewritten.text;
+      ipaReplacements = rewritten.replacements;
+    }
+
     if (attachDict) {
       const { locator } = await resolveDictLocator(state.modelId);
       payload.pronunciation_dictionary_locators = [locator];
@@ -561,7 +646,11 @@ async function generate() {
     if (dictApplied) {
       setStatus(`Ready · dictionary ${dictId || "on"}`);
     } else if (!plsSupported()) {
-      setStatus("Ready · inline IPA (no PLS)");
+      setStatus(
+        ipaReplacements
+          ? `Ready · pronunciation applied (${ipaReplacements})`
+          : "Ready · pronunciation applied automatically",
+      );
     } else {
       setStatus("Ready · dictionary off");
     }
@@ -599,7 +688,7 @@ function bind() {
   $("#download").addEventListener("click", download);
   $("#dict-filter").addEventListener("input", (ev) => {
     state.lexiconFilter = ev.target.value || "";
-    if (plsSupported()) renderLexiconRules();
+    renderLexiconRules();
   });
   bindLoadDefault();
 

@@ -14,10 +14,7 @@
         <div class="card-column-body">
           <section class="voice-block" aria-labelledby="voice-heading">
             <h2 id="voice-heading">Voice</h2>
-            <p class="field-hint">
-              Pick a voice from the list, then generate. Switch models before generating —
-              the dictionary panel updates with the selection.
-            </p>
+            <p class="field-hint">Pick a voice, then Generate. Switch models to update the dictionary.</p>
             <label class="select-wrap" for="voice">
               <span class="visually-hidden">Voice</span>
               <select id="voice" class="select"></select>
@@ -39,15 +36,9 @@
                 <input type="checkbox" id="use-dict" checked />
                 <span id="use-dict-label">Pronunciation dictionary</span>
               </label>
-              <label class="inline">
-                Seed
-                <input type="number" id="seed" min="0" step="1" placeholder="auto" />
-              </label>
             </div>
 
             <div class="generate-surface" id="generate-surface">
-              <p class="call-label">Ready to generate</p>
-              <p class="call-sub">Script goes in the middle panel. Audio appears here after synthesize.</p>
               <div class="call-actions">
                 <button type="button" class="btn btn-primary" id="generate">
                   <span class="btn-icon" aria-hidden="true">●</span>
@@ -56,13 +47,6 @@
                 <button type="button" class="btn btn-ghost" id="download" disabled>Download MP3</button>
               </div>
               <p class="status" id="status" role="status"></p>
-              <div class="player" id="player-wrap" hidden>
-                <div class="wave" id="wave" aria-hidden="true">
-                  <span></span><span></span><span></span><span></span><span></span>
-                  <span></span><span></span><span></span><span></span><span></span>
-                </div>
-                <audio id="player" controls></audio>
-              </div>
             </div>
 
             <dl class="metrics" id="dict-card">
@@ -89,6 +73,13 @@
           <div class="prompt-scroll">
             <label class="visually-hidden" for="script">Script</label>
             <textarea id="script" class="prompt-body" spellcheck="false" placeholder="Enter script…"></textarea>
+          </div>
+          <div class="player script-player" id="player-wrap" hidden>
+            <div class="wave" id="wave" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <audio id="player" controls></audio>
           </div>
         </div>
       </main>
