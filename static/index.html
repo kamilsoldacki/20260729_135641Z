@@ -10,21 +10,21 @@
 <body>
   <div class="app">
     <div class="grid">
-      <aside class="card rail-card" aria-label="Voice controls">
+      <aside class="card control-card" aria-label="Voice controls">
         <div class="card-column-body">
-          <section class="voice-block">
-            <h2>Voice</h2>
-            <p class="field-hint">Select a voice, then generate. Paste an ID below to override.</p>
+          <section class="voice-block" aria-labelledby="voice-heading">
+            <h2 id="voice-heading">Voice</h2>
+            <p class="field-hint">
+              Pick a voice from the list, then generate. Switch models before generating —
+              the dictionary panel updates with the selection.
+            </p>
             <label class="select-wrap" for="voice">
               <span class="visually-hidden">Voice</span>
               <select id="voice" class="select"></select>
             </label>
-            <label for="voice-manual" class="visually-hidden">Or paste voice ID</label>
-            <input type="text" id="voice-manual" class="manual-id" placeholder="Paste voice ID…" autocomplete="off" spellcheck="false" />
-            <p class="hint muted" id="voice-hint">No voices in config — paste a voice ID above.</p>
           </section>
 
-          <section class="controls-block">
+          <section class="call-block" aria-label="Generate">
             <div class="field">
               <span class="label">Model</span>
               <div class="segment" role="group" aria-label="Model">
@@ -45,76 +45,90 @@
               </label>
             </div>
 
-            <div class="dict-summary" id="dict-card">
-              <div class="dict-title" id="dict-title">Active dictionary</div>
-              <div class="dict-body" id="dict-body">Loading…</div>
+            <div class="generate-surface" id="generate-surface">
+              <p class="call-label">Ready to generate</p>
+              <p class="call-sub">Script goes in the middle panel. Audio appears here after synthesize.</p>
+              <div class="call-actions">
+                <button type="button" class="btn btn-primary" id="generate">
+                  <span class="btn-icon" aria-hidden="true">●</span>
+                  <span class="cta-label">Generate</span>
+                </button>
+                <button type="button" class="btn btn-ghost" id="download" disabled>Download MP3</button>
+              </div>
+              <p class="status" id="status" role="status"></p>
+              <div class="player" id="player-wrap" hidden>
+                <div class="wave" id="wave" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span><span></span>
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <audio id="player" controls></audio>
+              </div>
             </div>
+
+            <dl class="metrics" id="dict-card">
+              <div>
+                <dt id="dict-title">Active dictionary</dt>
+                <dd id="dict-body">Loading…</dd>
+              </div>
+            </dl>
           </section>
         </div>
+        <p class="card-model-foot" id="model-foot" aria-label="Active model">eleven_v3</p>
       </aside>
 
-      <main class="card editor-card" aria-label="Script and generate">
+      <main class="card prompt-card" aria-labelledby="script-heading">
         <div class="card-column-body">
-          <div class="field grow">
-            <div class="label-row">
-              <label for="script">Script</label>
-              <div class="chips" id="script-chips"></div>
-            </div>
-            <textarea id="script" rows="6" spellcheck="false" placeholder="Enter script…"></textarea>
+          <div class="card-head">
+            <h2 id="script-heading">Script</h2>
+            <p class="card-lead">
+              Edit the text to synthesize. Changes apply to the next generate —
+              nothing is saved remotely.
+            </p>
+            <button type="button" id="load-default" class="btn-link">Load default</button>
           </div>
-
-          <div class="actions">
-            <button type="button" class="btn btn-primary" id="generate">
-              <span class="cta-label">Generate</span>
-            </button>
-            <button type="button" class="btn btn-ghost" id="download" disabled>Download MP3</button>
-            <p class="status" id="status" role="status"></p>
-          </div>
-
-          <div class="player" id="player-wrap" hidden>
-            <div class="wave" id="wave" aria-hidden="true">
-              <span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span>
-            </div>
-            <audio id="player" controls></audio>
+          <div class="prompt-scroll">
+            <label class="visually-hidden" for="script">Script</label>
+            <textarea id="script" class="prompt-body" spellcheck="false" placeholder="Enter script…"></textarea>
           </div>
         </div>
       </main>
+
+      <aside class="card lexicon-card" aria-labelledby="lexicon-heading">
+        <div class="card-column-body">
+          <div class="card-head">
+            <h2 id="lexicon-heading">Dictionary</h2>
+            <p class="card-lead" id="lexicon-meta">Loading…</p>
+          </div>
+          <div class="lexicon-scroll">
+            <div class="ortho-block">
+              <span class="label">Orthography</span>
+              <ul class="ortho-list" id="ortho-list"></ul>
+            </div>
+
+            <div class="rules-toolbar">
+              <p class="rules-count" id="rules-count">Entries</p>
+              <label class="visually-hidden" for="dict-filter">Filter dictionary entries</label>
+              <input type="search" id="dict-filter" class="rules-filter" placeholder="Filter…" autocomplete="off" />
+            </div>
+
+            <div class="rules-scroll">
+              <table class="rules-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Grapheme</th>
+                    <th scope="col" class="arrow" aria-hidden="true"></th>
+                    <th scope="col" id="rules-value-head">Phoneme</th>
+                  </tr>
+                </thead>
+                <tbody id="rules-body">
+                  <tr><td colspan="3" class="rules-empty">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
-
-    <details class="lexicon-panel" id="lexicon">
-      <summary class="lexicon-summary">
-        <span class="lexicon-title">Dictionary</span>
-        <span class="lexicon-meta" id="lexicon-meta">Loading…</span>
-      </summary>
-      <div class="lexicon-body">
-        <div class="ortho-block">
-          <span class="label">Orthography</span>
-          <ul class="ortho-list" id="ortho-list"></ul>
-        </div>
-
-        <div class="rules-toolbar">
-          <p class="rules-count" id="rules-count">Entries</p>
-          <label class="visually-hidden" for="dict-filter">Filter dictionary entries</label>
-          <input type="search" id="dict-filter" class="rules-filter" placeholder="Filter…" autocomplete="off" />
-        </div>
-
-        <div class="rules-scroll">
-          <table class="rules-table">
-            <thead>
-              <tr>
-                <th scope="col">Grapheme</th>
-                <th scope="col" class="arrow" aria-hidden="true"></th>
-                <th scope="col" id="rules-value-head">Phoneme</th>
-              </tr>
-            </thead>
-            <tbody id="rules-body">
-              <tr><td colspan="3" class="rules-empty">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </details>
   </div>
 
   <script src="/static/app.js" type="module"></script>

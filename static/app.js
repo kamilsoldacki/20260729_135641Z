@@ -280,7 +280,6 @@ function fillVoices() {
     opt.value = "";
     opt.textContent = "No voices";
     sel.appendChild(opt);
-    $("#voice-hint").hidden = false;
   } else {
     for (const v of voices) {
       const opt = document.createElement("option");
@@ -288,7 +287,6 @@ function fillVoices() {
       opt.textContent = v.label || v.id;
       sel.appendChild(opt);
     }
-    $("#voice-hint").hidden = true;
   }
   syncGenerateEnabled();
 
@@ -298,17 +296,12 @@ function fillVoices() {
   }
 }
 
-function fillScriptChips() {
-  const wrap = $("#script-chips");
-  wrap.innerHTML = "";
-  const loadDefault = document.createElement("button");
-  loadDefault.type = "button";
-  loadDefault.className = "chip";
-  loadDefault.textContent = "Load default";
-  loadDefault.addEventListener("click", () => {
+function bindLoadDefault() {
+  const btn = $("#load-default");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
     $("#script").value = defaultScript();
   });
-  wrap.appendChild(loadDefault);
 }
 
 function setModel(modelId) {
@@ -316,13 +309,13 @@ function setModel(modelId) {
   document.querySelectorAll(".seg").forEach((el) => {
     el.classList.toggle("active", el.dataset.model === modelId);
   });
+  const foot = $("#model-foot");
+  if (foot) foot.textContent = modelId;
   delete $("#use-dict").dataset.userTouched;
   loadActiveLexicon();
 }
 
 function resolvedVoiceId() {
-  const manual = ($("#voice-manual").value || "").trim();
-  if (manual) return manual;
   return ($("#voice").value || "").trim();
 }
 
@@ -348,7 +341,7 @@ async function generate() {
   const voiceId = resolvedVoiceId();
   const text = $("#script").value.trim();
   if (!voiceId) {
-    setStatus("Select or paste a voice ID.", true);
+    setStatus("Select a voice from the list.", true);
     return;
   }
   if (!text) {
@@ -434,7 +427,6 @@ function download() {
 
 function bind() {
   $("#voice").addEventListener("change", syncGenerateEnabled);
-  $("#voice-manual").addEventListener("input", syncGenerateEnabled);
   document.querySelectorAll(".seg").forEach((el) => {
     el.addEventListener("click", () => setModel(el.dataset.model));
   });
@@ -447,6 +439,7 @@ function bind() {
     state.lexiconFilter = ev.target.value || "";
     if (plsSupported()) renderLexiconRules();
   });
+  bindLoadDefault();
 
   const player = $("#player");
   player.addEventListener("play", () => $("#wave").classList.add("playing"));
@@ -459,7 +452,6 @@ async function init() {
   try {
     state.config = await fetchConfig();
     fillVoices();
-    fillScriptChips();
     renderOrthography();
     setModel("eleven_v3");
     if (!state.config.api_key_configured) {
