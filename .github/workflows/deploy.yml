@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: github-pages
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Resolve API key
         id: apikey
@@ -36,7 +36,7 @@ jobs:
         run: |
           key="${FROM_SECRET_VITE:-${FROM_SECRET:-${FROM_VAR_VITE:-$FROM_VAR}}}"
           if [ -z "$key" ]; then
-            echo "::error::Brak klucza. Dodaj secret: ELEVENLABS_API_KEY"
+            echo "::error::Missing ELEVENLABS_API_KEY. Add it at Settings → Secrets and variables → Actions (repository secret), then re-run this workflow."
             exit 1
           fi
           echo "::add-mask::$key"
