@@ -1,0 +1,84 @@
+{
+  "brand": "TAIL",
+  "title": "Anzellan Voice Lab",
+  "models": [
+    {
+      "id": "eleven_v3",
+      "label": "Eleven v3",
+      "dict_mode": "phoneme",
+      "note": "Phoneme PLS rules apply. Audio tags [emotion] supported."
+    },
+    {
+      "id": "eleven_v4",
+      "label": "Eleven v4",
+      "dict_mode": "alias",
+      "note": "Phoneme tags are skipped on non-v3/flash models — alias PLS is used per docs."
+    }
+  ],
+  "pronunciation": {
+    "phoneme": {
+      "name": "Anzellan EXACT DOCX (IPA)",
+      "dictionary_id": "kGhqjTsEsWf2rfzEQ81a",
+      "version_id": "rbVmbjPXniy9ZFAqRwV1",
+      "pls_file": "anzellan_pronunciation_EXACT_DOCX.pls"
+    },
+    "alias": {
+      "name": "Anzellan ALIAS (v4 / non-phoneme)",
+      "dictionary_id": null,
+      "version_id": null,
+      "pls_file": "anzellan_pronunciation_ALIAS_v4.pls",
+      "auto_create": true
+    }
+  },
+  "sample_scripts": {
+    "docx_bilingual": [
+      "Degaemi, no pobem.",
+      "Ba pilage, calm now!",
+      "Li aba? What broke?",
+      "Tumunie, da power off!"
+    ],
+    "vilo_v3": "[impatient] Ba pilage, calm now! [commanding] Tumunie, da power off! [frustrated] Li aba? What broke?",
+    "kado_v3": "[sarcastic] Degaemi, no pobem. [arrogant] Ba pilage, calm now! [curiosity] Li aba? What broke?",
+    "jibu_v3": "[excited] Degaemi, no pobem! Degaemi! [awe] Tumunie, da power off! [curious] Li aba? What broke?",
+    "accent_v3": "[curious] Li aba? What broke? [frustration] Tumunie, da power off! [tired] Ba pilage, calm now! [awe] Degaemi, no pobem."
+  },
+  "characters": [
+    {
+      "id": "vilo",
+      "name": "Vilo",
+      "traits": "commanding, impatient",
+      "default_script_key": "vilo_v3",
+      "voices": []
+    },
+    {
+      "id": "kado",
+      "name": "Kado",
+      "traits": "sarcastic, arrogant",
+      "default_script_key": "kado_v3",
+      "voices": []
+    },
+    {
+      "id": "jibu",
+      "name": "Jibu",
+      "traits": "childlike energy, excitable — mature alien, not childish timbre",
+      "default_script_key": "jibu_v3",
+      "voices": []
+    },
+    {
+      "id": "accent",
+      "name": "Accent",
+      "traits": "Anzellan accent & conlang reference",
+      "default_script_key": "accent_v3",
+      "voices": []
+    }
+  ],
+  "_voices_schema": {
+    "voice_entry": {
+      "id": "ElevenLabs voice_id",
+      "label": "Display name, e.g. Vilo RASP STRONG",
+      "tier": "close | strong | custom",
+      "pack": "optional pack tag, e.g. rasp_brief"
+    },
+    "note": "Fill characters[].voices later. Example: {\"id\": \"Wlz1LudTO79ktz1mWg4X\", \"label\": \"Vilo rasp close\", \"tier\": \"close\", \"pack\": \"rasp_brief\"}"
+  }
+}
