@@ -90,9 +90,7 @@ function syncDictControls() {
   const label = $("#use-dict-label");
   const wrap = $("#use-dict-wrap");
   const row = $("#use-dict-row") || wrap?.closest(".field.row");
-  const title = $("#dict-title");
 
-  if (title) title.textContent = "Active dictionary";
   if (label) label.textContent = "Pronunciation dictionary";
   if (!checkbox) return;
 
@@ -247,8 +245,6 @@ function clientDictNote() {
 
 function updateDictCard() {
   const note = clientDictNote();
-  const body = $("#dict-body");
-  if (body) body.textContent = note;
   const metaEl = $("#lexicon-meta");
   if (metaEl) metaEl.textContent = note;
 }
@@ -568,8 +564,6 @@ function bind() {
 
 function showBootError(message) {
   const msg = String(message || "Failed to load.");
-  const body = $("#dict-body");
-  if (body) body.textContent = msg;
   const meta = $("#lexicon-meta");
   if (meta) meta.textContent = msg;
   const rules = $("#rules-body");

@@ -656,42 +656,6 @@ input[type="search"] {
   display: none;
 }
 
-.metrics {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-  flex: 0 0 auto;
-  margin: 0.15rem 0 0;
-  padding: 0.15rem 0 0;
-  border-top: none;
-}
-
-.metrics > div {
-  padding: 0.65rem 0.75rem;
-  border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px solid var(--stroke);
-}
-
-.metrics dt {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--faint);
-  margin: 0;
-}
-
-.metrics dd {
-  margin: 0.35rem 0 0;
-  font-family: var(--mono);
-  font-weight: 500;
-  font-size: 0.75rem;
-  line-height: 1.45;
-  color: var(--muted);
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
 .ortho-block {
   display: grid;
   gap: 0.35rem;
