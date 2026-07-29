@@ -36,7 +36,6 @@ const state = {
   lastUrl: null,
   lexiconEntries: [],
   lexiconKind: "phoneme",
-  lexiconFilter: "",
   lexiconLoadToken: 0,
   ipaPlsName: null,
 };
@@ -137,7 +136,6 @@ function currentDictBlock() {
 }
 
 function syncDictControls() {
-  const supported = plsSupported();
   const checkbox = $("#use-dict");
   const label = $("#use-dict-label");
   const wrap = $("#use-dict-wrap");
@@ -148,18 +146,11 @@ function syncDictControls() {
   if (label) label.textContent = "Pronunciation dictionary";
   if (!checkbox) return;
 
-  if (supported) {
-    if (row) row.hidden = false;
-    checkbox.disabled = false;
-    wrap?.classList.remove("is-disabled");
-    if (!checkbox.dataset.userTouched) checkbox.checked = true;
-  } else {
-    // v4: no checkbox; IPA rewrite runs automatically on Generate.
-    if (row) row.hidden = true;
-    checkbox.checked = false;
-    checkbox.disabled = true;
-    wrap?.classList.remove("is-disabled");
-  }
+  // v3: locators when checked. v4: auto-IPA rewrite when checked.
+  if (row) row.hidden = false;
+  checkbox.disabled = false;
+  wrap?.classList.remove("is-disabled");
+  if (!checkbox.dataset.userTouched) checkbox.checked = true;
 }
 
 function defaultScript() {
@@ -190,35 +181,26 @@ function renderOrthography() {
 
 function renderLexiconRules() {
   const body = $("#rules-body");
-  const filter = state.lexiconFilter.trim().toLowerCase();
-  const visible = filter
-    ? state.lexiconEntries.filter(
-        (e) =>
-          e.grapheme.toLowerCase().includes(filter) ||
-          e.value.toLowerCase().includes(filter),
-      )
-    : state.lexiconEntries;
+  const entries = state.lexiconEntries;
 
-  $("#rules-count").textContent = filter ? "Matching entries" : "Entries";
+  $("#rules-count").textContent = "Entries";
   $("#rules-value-head").textContent =
     state.lexiconKind === "alias" ? "Alias" : "Phoneme (IPA)";
 
   body.replaceChildren();
-  if (!visible.length) {
+  if (!entries.length) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
     td.colSpan = 3;
     td.className = "rules-empty";
-    td.textContent = state.lexiconEntries.length
-      ? "No entries match this filter."
-      : "No entries loaded.";
+    td.textContent = "No entries loaded.";
     tr.appendChild(td);
     body.appendChild(tr);
     return;
   }
 
   const frag = document.createDocumentFragment();
-  for (const entry of visible) {
+  for (const entry of entries) {
     const tr = document.createElement("tr");
     tr.innerHTML = `<td class="g">${escapeHtml(entry.grapheme)}</td><td class="arrow" aria-hidden="true">→</td><td class="v">${escapeHtml(entry.value)}</td>`;
     frag.appendChild(tr);
@@ -303,10 +285,14 @@ function applyInlineIpaFromEntries(text, entries) {
 
 function clientDictNote() {
   const meta = modelMeta();
+  if (meta.note) return meta.note;
   if (!plsSupported()) {
-    return meta.note || "Pronunciation applied automatically";
+    return [
+      "Pronunciation applied automatically.",
+      "Full PLS dictionary support with the public v4 release.",
+    ].join("\n");
   }
-  return meta.note || "Pronunciation dictionary applied · Alias + phonemes";
+  return "Works now · alias + phonemes (PLS applied)";
 }
 
 function updateDictCard() {
@@ -637,12 +623,13 @@ async function generate() {
   btn.disabled = true;
   setStatus("Generating…");
 
-  let dictApplied = false;
   let ipaReplacements = 0;
-  const attachDict = $("#use-dict").checked && plsSupported();
+  const useDict = $("#use-dict").checked;
+  const attachDict = useDict && plsSupported();
+  const applyIpa = useDict && !plsSupported();
 
   try {
-    if (!plsSupported()) {
+    if (applyIpa) {
       setStatus("Applying pronunciation…");
       let entries = state.lexiconEntries;
       if (!entries.length) {
@@ -660,7 +647,6 @@ async function generate() {
     if (attachDict) {
       const { locator } = await resolveDictLocator(state.modelId);
       payload.pronunciation_dictionary_locators = [locator];
-      dictApplied = true;
     }
 
     const res = await fetch(
@@ -688,9 +674,18 @@ async function generate() {
     $("#download").disabled = false;
     syncAudioUi();
 
-    if (dictApplied) {
+    // ElevenLabs TTS does not return X-Dict-Applied (that header is only from our
+    // FastAPI /api/tts proxy). Pages calls EL directly, so treat dictionary as
+    // applied when locators were attached to the request and the response was OK.
+    // resolveDictLocator failures throw before fetch and land in catch below.
+    const dictApplied = Array.isArray(payload.pronunciation_dictionary_locators)
+      && payload.pronunciation_dictionary_locators.length > 0;
+
+    if (!useDict) {
+      setStatus("Ready · dictionary off");
+    } else if (dictApplied) {
       setStatus("Ready · dictionary on");
-    } else if (!plsSupported()) {
+    } else if (applyIpa) {
       setStatus(
         ipaReplacements
           ? "Ready · pronunciation applied"
@@ -730,10 +725,6 @@ function bind() {
   });
   $("#generate").addEventListener("click", generate);
   $("#download").addEventListener("click", download);
-  $("#dict-filter").addEventListener("input", (ev) => {
-    state.lexiconFilter = ev.target.value || "";
-    renderLexiconRules();
-  });
   bindLoadDefault();
   bindAudioPlayer();
 }

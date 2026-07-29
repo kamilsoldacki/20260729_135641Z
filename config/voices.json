@@ -7,7 +7,7 @@
       "label": "Eleven v3",
       "dict_mode": "phoneme",
       "pls_supported": true,
-      "note": "Pronunciation dictionary applied · Alias + phonemes"
+      "note": "Works now · alias + phonemes (PLS applied)"
     },
     {
       "id": "eleven_v4",
@@ -15,7 +15,7 @@
       "dict_mode": "inline_ipa",
       "pls_supported": false,
       "preview": true,
-      "note": "Pronunciation applied automatically"
+      "note": "Pronunciation applied automatically.\nFull PLS dictionary support with the public v4 release."
     }
   ],
   "pronunciation": {

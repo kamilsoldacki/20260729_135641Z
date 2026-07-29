@@ -10,92 +10,94 @@
 <body>
   <div class="app">
     <div class="grid">
-      <aside class="card control-card" aria-label="Voice controls">
-        <div class="card-column-body">
-          <section class="voice-block" aria-labelledby="voice-heading">
-            <h2 id="voice-heading">Voice</h2>
-            <p class="field-hint">Pick a voice, then Generate in the Script panel.</p>
-            <label class="select-wrap" for="voice">
-              <span class="visually-hidden">Voice</span>
-              <select id="voice" class="select"></select>
-            </label>
-          </section>
-
-          <section class="call-block" aria-label="Model and dictionary">
-            <div class="field">
-              <span class="label">Model</span>
-              <div class="segment" role="group" aria-label="Model">
-                <button type="button" class="seg active" data-model="eleven_v3" id="model-v3">v3</button>
-                <button type="button" class="seg" data-model="eleven_v4" id="model-v4">v4</button>
-              </div>
-            </div>
-
-            <div class="field row" id="use-dict-row">
-              <label class="check" id="use-dict-wrap">
-                <input type="checkbox" id="use-dict" checked />
-                <span id="use-dict-label">Pronunciation dictionary</span>
+      <div class="left-stack">
+        <aside class="card control-card" aria-label="Voice controls">
+          <div class="card-column-body">
+            <section class="voice-block" aria-labelledby="voice-heading">
+              <h2 id="voice-heading">Voice</h2>
+              <p class="field-hint">Pick a voice, then Generate in the Script panel.</p>
+              <label class="select-wrap" for="voice">
+                <span class="visually-hidden">Voice</span>
+                <select id="voice" class="select"></select>
               </label>
-            </div>
+            </section>
 
-            <dl class="metrics" id="dict-card">
-              <div>
-                <dt id="dict-title">Active dictionary</dt>
-                <dd id="dict-body">Loading…</dd>
-              </div>
-            </dl>
-          </section>
-        </div>
-      </aside>
-
-      <main class="card prompt-card" aria-labelledby="script-heading">
-        <div class="card-column-body">
-          <div class="card-head">
-            <h2 id="script-heading">Script</h2>
-            <p class="card-lead">
-              Edit the text to synthesize. Changes apply to the next generate —
-              nothing is saved remotely.
-            </p>
-            <button type="button" id="load-default" class="btn-link">Load default</button>
-          </div>
-          <div class="prompt-scroll">
-            <label class="visually-hidden" for="script">Script</label>
-            <textarea id="script" class="prompt-body" spellcheck="false" placeholder="Enter script…"></textarea>
-          </div>
-
-          <div class="script-actions" id="script-actions">
-            <div class="script-action-row">
-              <button type="button" class="btn btn-compact btn-primary" id="generate">Generate</button>
-              <button type="button" class="btn btn-compact btn-ghost" id="download" disabled>Download</button>
-            </div>
-            <p class="status" id="status" role="status"></p>
-          </div>
-
-          <div class="player script-player" id="player-wrap" hidden>
-            <div class="audio-bar">
-              <button type="button" class="audio-toggle" id="audio-toggle" aria-label="Play">
-                <span class="audio-toggle-icon" aria-hidden="true">▶</span>
-              </button>
-              <div class="audio-main">
-                <input
-                  type="range"
-                  class="audio-seek"
-                  id="audio-seek"
-                  min="0"
-                  max="1000"
-                  value="0"
-                  step="1"
-                  aria-label="Seek"
-                />
-                <div class="audio-times">
-                  <span id="audio-current">0:00</span>
-                  <span id="audio-duration">0:00</span>
+            <section class="call-block" aria-label="Model and dictionary">
+              <div class="field">
+                <span class="label">Model</span>
+                <div class="segment" role="group" aria-label="Model">
+                  <button type="button" class="seg active" data-model="eleven_v3" id="model-v3">v3</button>
+                  <button type="button" class="seg" data-model="eleven_v4" id="model-v4">v4</button>
                 </div>
               </div>
-            </div>
-            <audio id="player" preload="metadata"></audio>
+
+              <div class="field row" id="use-dict-row">
+                <label class="check" id="use-dict-wrap">
+                  <input type="checkbox" id="use-dict" checked />
+                  <span id="use-dict-label">Pronunciation dictionary</span>
+                </label>
+              </div>
+
+              <dl class="metrics" id="dict-card">
+                <div>
+                  <dt id="dict-title">Active dictionary</dt>
+                  <dd id="dict-body">Loading…</dd>
+                </div>
+              </dl>
+            </section>
           </div>
-        </div>
-      </main>
+        </aside>
+
+        <main class="card prompt-card" aria-labelledby="script-heading">
+          <div class="card-column-body">
+            <div class="card-head">
+              <h2 id="script-heading">Script</h2>
+              <p class="card-lead">
+                Edit the text to synthesize. Changes apply to the next generate —
+                nothing is saved remotely.
+              </p>
+              <button type="button" id="load-default" class="btn-link">Load default</button>
+            </div>
+            <div class="prompt-scroll">
+              <label class="visually-hidden" for="script">Script</label>
+              <textarea id="script" class="prompt-body" spellcheck="false" placeholder="Enter script…"></textarea>
+            </div>
+
+            <div class="script-actions" id="script-actions">
+              <div class="script-action-row">
+                <button type="button" class="btn btn-compact btn-primary" id="generate">Generate</button>
+                <button type="button" class="btn btn-compact btn-ghost" id="download" disabled>Download</button>
+              </div>
+              <p class="status" id="status" role="status"></p>
+            </div>
+
+            <div class="player script-player" id="player-wrap" hidden>
+              <div class="audio-bar">
+                <button type="button" class="audio-toggle" id="audio-toggle" aria-label="Play">
+                  <span class="audio-toggle-icon" aria-hidden="true">▶</span>
+                </button>
+                <div class="audio-main">
+                  <input
+                    type="range"
+                    class="audio-seek"
+                    id="audio-seek"
+                    min="0"
+                    max="1000"
+                    value="0"
+                    step="1"
+                    aria-label="Seek"
+                  />
+                  <div class="audio-times">
+                    <span id="audio-current">0:00</span>
+                    <span id="audio-duration">0:00</span>
+                  </div>
+                </div>
+              </div>
+              <audio id="player" preload="metadata"></audio>
+            </div>
+          </div>
+        </main>
+      </div>
 
       <aside class="card lexicon-card" aria-labelledby="lexicon-heading">
         <div class="card-column-body">
@@ -111,8 +113,6 @@
 
             <div class="rules-toolbar">
               <p class="rules-count" id="rules-count">Entries</p>
-              <label class="visually-hidden" for="dict-filter">Filter dictionary entries</label>
-              <input type="search" id="dict-filter" class="rules-filter" placeholder="Filter…" autocomplete="off" />
             </div>
 
             <div class="rules-scroll">
