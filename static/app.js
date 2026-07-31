@@ -19,6 +19,8 @@ const state = {
   lexiconKind: "phoneme",
   lexiconLoadToken: 0,
   ipaPlsName: null,
+  englishLexiconEntries: [],
+  englishPlsName: null,
 };
 
 function escapeHtml(value) {
@@ -89,9 +91,11 @@ function syncDictControls() {
   const checkbox = $("#use-dict");
   const label = $("#use-dict-label");
   const wrap = $("#use-dict-wrap");
-  const row = $("#use-dict-row") || wrap?.closest(".field.row");
+  const row = $("#use-dict-row") || wrap?.closest(".field");
+  const englishBox = $("#use-english-ipa");
+  const englishWrap = $("#use-english-ipa-wrap");
 
-  if (label) label.textContent = "Pronunciation dictionary";
+  if (label) label.textContent = "Anzellan IPA";
   if (!checkbox) return;
 
   // v3: locators when checked. v4: auto-IPA rewrite when checked.
@@ -99,6 +103,11 @@ function syncDictControls() {
   checkbox.disabled = false;
   wrap?.classList.remove("is-disabled");
   if (!checkbox.dataset.userTouched) checkbox.checked = true;
+
+  if (englishBox) {
+    englishBox.disabled = false;
+    englishWrap?.classList.remove("is-disabled");
+  }
 }
 
 function defaultScript() {
@@ -186,6 +195,56 @@ async function loadIpaRewriteEntries() {
   return { entries: [], plsName: null, kind: "phoneme" };
 }
 
+async function loadEnglishIpaEntries() {
+  if (state.englishLexiconEntries.length) {
+    return {
+      entries: state.englishLexiconEntries,
+      plsName: state.englishPlsName,
+    };
+  }
+  const plsName = safePlsBasename(state.config.pronunciation?.english?.pls_file);
+  if (!plsName) return { entries: [], plsName: null };
+  const entries = await fetchPlsEntries(plsName);
+  state.englishLexiconEntries = entries;
+  state.englishPlsName = plsName;
+  return { entries, plsName };
+}
+
+/**
+ * Apply optional Anzellan (v4 inline) then English IPA rewrites.
+ * Existing /…/ spans stay protected; Anzellan wins on overlapping words.
+ */
+async function applySelectedIpaRewrites(text, { applyAnzellanInline, applyEnglish }) {
+  let out = text;
+  let replacements = 0;
+  const parts = [];
+
+  if (applyAnzellanInline) {
+    let entries = state.lexiconEntries;
+    if (!entries.length) {
+      const loaded = await loadIpaRewriteEntries();
+      entries = loaded.entries;
+      state.lexiconEntries = loaded.entries;
+      state.lexiconKind = loaded.kind;
+      state.ipaPlsName = loaded.plsName;
+    }
+    const rewritten = applyInlineIpaFromEntries(out, entries);
+    out = rewritten.text;
+    replacements += rewritten.replacements;
+    if (rewritten.replacements) parts.push("Anzellan");
+  }
+
+  if (applyEnglish) {
+    const loaded = await loadEnglishIpaEntries();
+    const rewritten = applyInlineIpaFromEntries(out, loaded.entries);
+    out = rewritten.text;
+    replacements += rewritten.replacements;
+    if (rewritten.replacements) parts.push("English");
+  }
+
+  return { text: out, replacements, parts };
+}
+
 function wrapInlineIpa(value) {
   const cleaned = String(value || "").replace(/^\/+|\/+$/g, "").trim();
   return cleaned ? `/${cleaned}/` : "";
@@ -217,7 +276,8 @@ function applyInlineIpaFromEntries(text, entries) {
   });
 
   let replacements = 0;
-  work = work.replace(/\p{L}[\p{L}\p{M}']*/gu, (word) => {
+  // Include hyphens so Anzellan forms like ga-no / ked-ba match PLS graphemes.
+  work = work.replace(/\p{L}[\p{L}\p{M}'-]*/gu, (word) => {
     let value = byExact.get(word);
     if (value == null) value = byLower.get(word.toLowerCase());
     if (value == null) return word;
@@ -235,10 +295,7 @@ function clientDictNote() {
   const meta = modelMeta();
   if (meta.note) return meta.note;
   if (!plsSupported()) {
-    return [
-      "Pronunciation applied automatically.",
-      "Full PLS dictionary support with the public v4 release.",
-    ].join("\n");
+    return "v4 preview · inline /IPA/ + text normalizer off (no PLS locators).";
   }
   return "Works now · alias + phonemes (PLS applied)";
 }
@@ -418,6 +475,8 @@ function bindAudioPlayer() {
 }
 
 function resolvedVoiceId() {
+  const custom = ($("#voice-id-custom")?.value || "").trim();
+  if (custom) return custom;
   return ($("#voice").value || "").trim();
 }
 
@@ -456,34 +515,35 @@ async function generate() {
   }
 
   const useDict = $("#use-dict").checked;
-  const applyIpa = useDict && !plsSupported();
+  const useEnglishIpa = Boolean($("#use-english-ipa")?.checked);
+  // v3: phoneme PLS locators (ElevenLabs). v4: client inline /IPA/ (phoneme PLS unsupported).
+  const attachAnzellan = useDict && plsSupported();
+  const attachEnglish =
+    useEnglishIpa &&
+    plsSupported() &&
+    Boolean(state.config.pronunciation?.english?.dictionary_id);
+  const applyAnzellanInline = useDict && !plsSupported();
+  const applyEnglishInline = useEnglishIpa && !attachEnglish;
   const body = {
     text,
     voice_id: voiceId,
     model_id: state.modelId,
-    use_dictionary: useDict && plsSupported(),
+    use_dictionary: attachAnzellan,
+    use_english_dictionary: attachEnglish,
   };
 
   const btn = $("#generate");
   btn.disabled = true;
   setStatus("Generating…");
 
-  let ipaReplacements = 0;
-
   try {
-    if (applyIpa) {
+    if (applyAnzellanInline || applyEnglishInline) {
       setStatus("Applying pronunciation…");
-      let entries = state.lexiconEntries;
-      if (!entries.length) {
-        const loaded = await loadIpaRewriteEntries();
-        entries = loaded.entries;
-        state.lexiconEntries = loaded.entries;
-        state.lexiconKind = loaded.kind;
-        state.ipaPlsName = loaded.plsName;
-      }
-      const rewritten = applyInlineIpaFromEntries(text, entries);
+      const rewritten = await applySelectedIpaRewrites(text, {
+        applyAnzellanInline,
+        applyEnglish: applyEnglishInline,
+      });
       body.text = rewritten.text;
-      ipaReplacements = rewritten.replacements;
     }
 
     const res = await fetch("/api/tts", {
@@ -514,18 +574,14 @@ async function generate() {
     syncAudioUi();
 
     const dictApplied = res.headers.get("X-Dict-Applied") === "1";
-    if (!useDict) {
+    const labels = [
+      ...(useDict && (attachAnzellan || applyAnzellanInline || dictApplied) ? ["Anzellan"] : []),
+      ...(useEnglishIpa ? ["English"] : []),
+    ];
+    if (!labels.length) {
       setStatus("Ready · dictionary off");
-    } else if (dictApplied) {
-      setStatus("Ready · dictionary on");
-    } else if (applyIpa) {
-      setStatus(
-        ipaReplacements
-          ? "Ready · pronunciation applied"
-          : "Ready · pronunciation applied automatically",
-      );
     } else {
-      setStatus("Ready · dictionary off");
+      setStatus(`Ready · ${labels.join(" + ")} IPA`);
     }
 
     try {
@@ -550,11 +606,15 @@ function download() {
 
 function bind() {
   $("#voice").addEventListener("change", syncGenerateEnabled);
+  $("#voice-id-custom").addEventListener("input", syncGenerateEnabled);
   document.querySelectorAll(".seg").forEach((el) => {
     el.addEventListener("click", () => setModel(el.dataset.model));
   });
   $("#use-dict").addEventListener("change", () => {
     $("#use-dict").dataset.userTouched = "1";
+  });
+  $("#use-english-ipa")?.addEventListener("change", () => {
+    $("#use-english-ipa").dataset.userTouched = "1";
   });
   $("#generate").addEventListener("click", generate);
   $("#download").addEventListener("click", download);

@@ -20,6 +20,7 @@
                 <span class="visually-hidden">Voice</span>
                 <select id="voice" class="select"></select>
               </label>
+              <input type="text" id="voice-id-custom" class="voice-id-input" placeholder="voice_id" autocomplete="off" spellcheck="false" />
             </section>
 
             <section class="call-block" aria-label="Model and dictionary">
@@ -27,14 +28,18 @@
                 <span class="label">Model</span>
                 <div class="segment" role="group" aria-label="Model">
                   <button type="button" class="seg active" data-model="eleven_v3" id="model-v3">v3</button>
-                  <button type="button" class="seg" data-model="eleven_v4" id="model-v4">v4</button>
+                  <button type="button" class="seg" data-model="eleven_v4" id="model-v4">v4 preview</button>
                 </div>
               </div>
 
-              <div class="field row" id="use-dict-row">
+              <div class="field dict-toggles" id="use-dict-row">
                 <label class="check" id="use-dict-wrap">
                   <input type="checkbox" id="use-dict" checked />
-                  <span id="use-dict-label">Pronunciation dictionary</span>
+                  <span id="use-dict-label">Anzellan IPA</span>
+                </label>
+                <label class="check" id="use-english-ipa-wrap">
+                  <input type="checkbox" id="use-english-ipa" />
+                  <span id="use-english-ipa-label">English IPA</span>
                 </label>
               </div>
             </section>

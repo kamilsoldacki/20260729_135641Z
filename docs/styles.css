@@ -272,6 +272,36 @@ body {
   display: block;
 }
 
+.voice-id-input {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 0.5rem;
+  font-family: var(--font);
+  font-size: 0.9375rem;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--stroke-strong);
+  background-color: var(--bg-elevated);
+  color: var(--text);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.voice-id-input::placeholder {
+  color: var(--muted);
+}
+
+.voice-id-input:hover {
+  border-color: rgba(0, 0, 0, 0.18);
+  background-color: var(--surface-hover);
+}
+
+.voice-id-input:focus-visible {
+  outline: none;
+  border-color: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+}
+
 .select {
   width: 100%;
   min-height: 48px;
@@ -319,8 +349,16 @@ input[type="search"]:focus-visible {
 }
 
 .call-block > .field,
-.call-block > .field.row {
+.call-block > .field.row,
+.call-block > .dict-toggles {
   flex-shrink: 0;
+}
+
+.dict-toggles {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
 }
 
 .field {

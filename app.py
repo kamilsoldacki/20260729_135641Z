@@ -87,7 +87,7 @@ def model_pls_supported(cfg: dict[str, Any], model_id: str) -> bool:
 
 
 def resolve_dict_locator(cfg: dict[str, Any], model_id: str) -> dict[str, str]:
-    """Pick phoneme dictionary locators for models that support PLS."""
+    """Pick phoneme dictionary locator for models that support PLS."""
     if not model_pls_supported(cfg, model_id):
         raise HTTPException(
             status_code=400,
@@ -99,7 +99,11 @@ def resolve_dict_locator(cfg: dict[str, Any], model_id: str) -> dict[str, str]:
     if mode not in ("phoneme", "alias"):
         mode = "phoneme"
 
-    block = cfg["pronunciation"][mode]
+    return locator_for_block(cfg, mode)
+
+
+def locator_for_block(cfg: dict[str, Any], mode: str) -> dict[str, str]:
+    block = cfg.get("pronunciation", {}).get(mode) or {}
     dict_id = block.get("dictionary_id")
     version_id = block.get("version_id")
 
@@ -125,6 +129,27 @@ def resolve_dict_locator(cfg: dict[str, Any], model_id: str) -> dict[str, str]:
     if version_id:
         locator["version_id"] = version_id
     return locator
+
+
+def resolve_tts_locators(
+    cfg: dict[str, Any],
+    model_id: str,
+    *,
+    use_anzellan: bool,
+    use_english: bool,
+) -> list[dict[str, str]]:
+    """Build ordered PLS locators for v3 (Anzellan first, then English)."""
+    if not model_pls_supported(cfg, model_id):
+        return []
+
+    locators: list[dict[str, str]] = []
+    if use_anzellan:
+        locators.append(resolve_dict_locator(cfg, model_id))
+    if use_english:
+        english = cfg.get("pronunciation", {}).get("english") or {}
+        if english.get("dictionary_id"):
+            locators.append(locator_for_block(cfg, "english"))
+    return locators
 
 
 def ensure_alias_dictionary(cfg: dict[str, Any]) -> dict[str, str]:
@@ -187,6 +212,7 @@ class TtsRequest(BaseModel):
     model_id: Literal["eleven_v3", "eleven_v4"] = "eleven_v3"
     seed: int | None = Field(default=None, ge=0, le=4_294_967_295)
     use_dictionary: bool = True
+    use_english_dictionary: bool = False
     stability: float | None = Field(default=None, ge=0.0, le=1.0)
     similarity_boost: float | None = Field(default=None, ge=0.0, le=1.0)
     style: float | None = Field(default=None, ge=0.0, le=1.0)
@@ -241,6 +267,8 @@ def get_config() -> dict[str, Any]:
         "pronunciation": {
             "phoneme": cfg["pronunciation"]["phoneme"],
             "alias": alias,
+            "english": cfg["pronunciation"].get("english")
+            or {"name": "English IPA", "pls_file": "english_pronunciation_IPA.pls"},
         },
         "api_key_configured": bool(
             (
@@ -265,6 +293,9 @@ def tts(req: TtsRequest) -> Response:
         "text": req.text,
         "model_id": req.model_id,
     }
+    # v4 IPA: inline /IPA/ requires the text normalizer off (no PLS locators).
+    if req.model_id == "eleven_v4":
+        payload["apply_text_normalization"] = "off"
     if req.seed is not None:
         payload["seed"] = req.seed
 
@@ -278,16 +309,25 @@ def tts(req: TtsRequest) -> Response:
     if voice_settings:
         payload["voice_settings"] = voice_settings
 
-    dict_meta: dict[str, Any] = {"applied": False}
-    if req.use_dictionary and model_pls_supported(cfg, req.model_id):
-        locator = resolve_dict_locator(cfg, req.model_id)
-        payload["pronunciation_dictionary_locators"] = [locator]
-        models = {m["id"]: m for m in cfg.get("models", [])}
-        dict_meta = {
-            "applied": True,
-            "mode": models.get(req.model_id, {}).get("dict_mode"),
-            "locator": locator,
-        }
+    dict_meta: dict[str, Any] = {"applied": False, "locators": []}
+    if model_pls_supported(cfg, req.model_id) and (
+        req.use_dictionary or req.use_english_dictionary
+    ):
+        locators = resolve_tts_locators(
+            cfg,
+            req.model_id,
+            use_anzellan=req.use_dictionary,
+            use_english=req.use_english_dictionary,
+        )
+        if locators:
+            payload["pronunciation_dictionary_locators"] = locators
+            models = {m["id"]: m for m in cfg.get("models", [])}
+            dict_meta = {
+                "applied": True,
+                "mode": models.get(req.model_id, {}).get("dict_mode"),
+                "locators": locators,
+                "locator": locators[0],
+            }
 
     try:
         # trust_env=False: ignore broken HTTP(S)_PROXY from IDE sandboxes
